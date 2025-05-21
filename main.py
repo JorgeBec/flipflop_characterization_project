@@ -1,9 +1,3 @@
-<<<<<<< Updated upstream
-print("Hello World")
-print("test 14/05/25")
-print("hola")
-print('greta')
-=======
 
 import pyvisa
 import numpy as np
@@ -30,4 +24,3 @@ for recurso in recursos:
         print(f"{recurso} -> No responde a *IDN? ({e})")
 
 
->>>>>>> Stashed changes
