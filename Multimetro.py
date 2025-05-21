@@ -27,7 +27,7 @@ try:
     print("Dispositivos conectados:", devices)
     
     # Abrimos el recurso del multímetro (ajusta si tu puerto es diferente)
-    instrument = rm.open_resource('ASRL5::INSTR')
+    instrument = rm.open_resource('ASRL6::INSTR')
     
     # Configuramos parámetros de comunicación:
     instrument.baud_rate = 9600  # Asegúrate de que coincide con el multímetro

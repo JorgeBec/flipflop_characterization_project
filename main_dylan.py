@@ -87,6 +87,43 @@ def detect_and_configure_gwinstek_afg():
     print("No GW Instek AFG-2005 function generator found.")
     return None
 
+def read_voltage_with_fluke45():
+    import re
+    try:
+        rm = pyvisa.ResourceManager()
+        devices = rm.list_resources()
+        print("Dispositivos conectados:", devices)
+
+        instrument = rm.open_resource('ASRL6::INSTR')  # Ajusta el puerto si es necesario
+        instrument.baud_rate = 9600
+        instrument.timeout = 5000
+
+        instrument.write("VOLT")
+        print("Multímetro configurado para medir voltaje.")
+
+        time.sleep(2)
+
+        try:
+            val1 = instrument.query("VAL1?").strip()
+        except Exception as e:
+            print("Error al leer VAL1?:", e)
+
+        try:
+            meas1 = instrument.query("MEAS1?").strip()
+
+            # Eliminar duplicados si existen (ej. +22.009E+3+22.009E+3)
+            pattern = r'[+-]?\d+\.\d+E[+-]?\d+'
+            matches = re.findall(pattern, meas1)
+            voltage = matches[0] if matches else meas1
+
+            print(f"Voltaje medido por el multímetro Fluke 45: {voltage} V")
+
+        except Exception as e:
+            print("Error al leer MEAS1?:", e)
+
+    except Exception as e:
+        print("Error al conectar con el multímetro Fluke 45:", e)
+
 # --- Main program ---
 function_generator = detect_and_configure_gwinstek_afg()
 if function_generator:
@@ -98,3 +135,5 @@ if power_supply:
     configure_channel(power_supply, "CH1")
     configure_channel(power_supply, "CH2")
     enable_outputs(power_supply)
+    read_voltage_with_fluke45()
+
