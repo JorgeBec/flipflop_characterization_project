@@ -1,4 +1,3 @@
-
 import pyvisa
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,5 +21,3 @@ for recurso in recursos:
         dispositivo.close()
     except Exception as e:
         print(f"{recurso} -> No responde a *IDN? ({e})")
-
-
