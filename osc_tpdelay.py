@@ -1,12 +1,12 @@
 import pyvisa
+from osc_setup import setup_oscilloscope 
+from dev_setup import find_instruments
 
+osc, dmm, psu, fg = find_instruments()
 
-rm = pyvisa.ResourceManager()
-devices = rm.list_resources()
+if osc:
+    print(osc.query("*IDN?"))
+    setup_oscilloscope(osc)  # only call setup if osc is valid
+else:
+    print("Oscilloscope not found.")
 
-print("Connected VISA devices:")
-for device in devices:
-    print(device)
-
-osc = rm.open_resource(devices[0])
-print(osc.query("*IDN?")) 
