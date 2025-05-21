@@ -1,5 +1,6 @@
 import pyvisa
 import time
+import re
 
 def detect_siglent_power_supply():
     rm = pyvisa.ResourceManager()
@@ -10,21 +11,19 @@ def detect_siglent_power_supply():
             instrument = rm.open_resource(resource)
             idn = instrument.query("*IDN?")
             if "SIGLENT" in idn.upper() and "SPD3303X-E" in idn.upper():
-                print(f"Power supply found: {idn.strip()} at {resource}")
+                # print(f"Power supply found: {idn.strip()} at {resource}")
                 return instrument
-        except Exception as e:
-            print(f"Could not connect to {resource}: {e}")
-    
-    print("No SIGLENT SPD3303X-E power supply found.")
-    return None
+        except Exception:
+            pass  # Silenciado
+
+    return None  # No imprimir mensaje
 
 def initialize_power_supply(supply):
-    # Set both channels to 0V and 100mA, and ensure outputs are OFF
     for ch in ["CH1", "CH2"]:
         supply.write(f"{ch}:VOLT 0")
         supply.write(f"{ch}:CURR 0.1")
         supply.write(f"OUTP {ch},OFF")
-    print("Both channels initialized to 0V, 100 mA current limit, and outputs OFF.")
+    # print("Both channels initialized to 0V, 100 mA current limit, and outputs OFF.")
 
 def configure_channel(supply, channel):
     while True:
@@ -43,10 +42,9 @@ def configure_channel(supply, channel):
 def enable_outputs(supply):
     supply.write("OUTP CH1,ON")
     supply.write("OUTP CH2,ON")
-    print("CH1 and CH2 outputs are now ON.")
+    # print("CH1 and CH2 outputs are now ON.")
 
 def detect_and_configure_gwinstek_afg():
-    import time
     rm = pyvisa.ResourceManager()
     resources = rm.list_resources()
 
@@ -63,8 +61,6 @@ def detect_and_configure_gwinstek_afg():
 
             idn = gen.query("*IDN?")
             if "GW INSTEK" in idn.upper() and "AFG-2005" in idn.upper():
-                print(f"Function generator found: {idn.strip()} at {resource}")
-
                 gen.write("SOUR1:APPLy:SQU 1000,5,2.5")
                 time.sleep(0.2)
                 gen.write("OUTP1 ON")
@@ -81,53 +77,40 @@ def detect_and_configure_gwinstek_afg():
                 print(f" - Output: {'ON' if outp.strip() == '1' else 'OFF'}")
 
                 return gen
-        except Exception as e:
-            print(f"Could not connect to {resource}: {e}")
-    
-    print("No GW Instek AFG-2005 function generator found.")
+        except Exception:
+            pass  # Silenciado
+
     return None
 
 def read_voltage_with_fluke45():
-    import re
     try:
         rm = pyvisa.ResourceManager()
-        devices = rm.list_resources()
-        print("Dispositivos conectados:", devices)
-
-        instrument = rm.open_resource('ASRL6::INSTR')  # Ajusta el puerto si es necesario
+        instrument = rm.open_resource('ASRL7::INSTR')  # Ajusta si es necesario
         instrument.baud_rate = 9600
         instrument.timeout = 5000
 
         instrument.write("VOLT")
-        print("Multímetro configurado para medir voltaje.")
-
         time.sleep(2)
 
         try:
             val1 = instrument.query("VAL1?").strip()
-        except Exception as e:
-            print("Error al leer VAL1?:", e)
+        except Exception:
+            pass
 
         try:
             meas1 = instrument.query("MEAS1?").strip()
-
-            # Eliminar duplicados si existen (ej. +22.009E+3+22.009E+3)
             pattern = r'[+-]?\d+\.\d+E[+-]?\d+'
             matches = re.findall(pattern, meas1)
             voltage = matches[0] if matches else meas1
-
             print(f"Voltaje medido por el multímetro Fluke 45: {voltage} V")
-
-        except Exception as e:
-            print("Error al leer MEAS1?:", e)
-
-    except Exception as e:
-        print("Error al conectar con el multímetro Fluke 45:", e)
+        except Exception:
+            print("Error al leer MEAS1?")
+    except Exception:
+        pass  # Silenciar error de conexión si no está presente
 
 # --- Main program ---
 function_generator = detect_and_configure_gwinstek_afg()
-if function_generator:
-    print("Function generator configured successfully.")
+# No imprimir mensaje si no se encuentra
 
 power_supply = detect_siglent_power_supply()
 if power_supply:
@@ -136,4 +119,3 @@ if power_supply:
     configure_channel(power_supply, "CH2")
     enable_outputs(power_supply)
     read_voltage_with_fluke45()
-
