@@ -21,7 +21,7 @@ def detect_siglent_power_supply():
     import re
     rm = pyvisa.ResourceManager()
     resources = rm.list_resources()
-    print("🔍 VISA Resources found:", resources)
+    #print("🔍 VISA Resources found:", resources)
 
     siglent_pattern = re.compile(r"SIGLENT.*SPD3303X-E", re.IGNORECASE)
 
@@ -31,16 +31,17 @@ def detect_siglent_power_supply():
             instrument = rm.open_resource(resource)
             instrument.timeout = 3000
             idn = instrument.query("*IDN?").strip()
-            print(f"🧾 Response from {resource}: {idn}")
+            #print(f"🧾 Response from {resource}: {idn}")
 
             if siglent_pattern.search(idn):
-                print(f"✅ Detected Siglent SPD3303X-E at {resource}")
+                #print(f"✅ Detected Siglent SPD3303X-E at {resource}")
                 return instrument
 
         except Exception as e:
-            print(f"⚠️ Error probing {resource}: {e}")
+            #print(f"⚠️ Error probing {resource}: {e}")
+            pass
 
-    print("❌ Siglent SPD3303X-E power supply not detected.")
+    #print("❌ Siglent SPD3303X-E power supply not detected.")
     return None
 
 
@@ -186,7 +187,7 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
     print(df.to_string(index=False))
 
     df.to_csv("voltage_sweep_results.csv", index=False)
-    print("\nResults saved to 'voltage_sweep_results.csv'.")
+    print("\nResults saved to 'voltage_ascending_sweep_results.csv'.")
 
     return df
 
