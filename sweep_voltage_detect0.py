@@ -15,56 +15,83 @@ def set_daq_analog_output(channel, voltage):
         )
         task.write(voltage)
 
-# ------------------- Configure Siglent Power Supply -------------------
+# ------------------- Generate Clock Pulse Using DAQ -------------------
 
-def detect_siglent_power_supply():
-    rm = pyvisa.ResourceManager()
-    resources = rm.list_resources()
-    for resource in resources:
-        try:
-            instrument = rm.open_resource(resource)
-            idn = instrument.query("*IDN?")
-            if "SIGLENT" in idn.upper() and "SPD3303X-E" in idn.upper():
-                return instrument
-        except Exception:
-            pass
-    return None
+def send_daq_clock_pulse(clk_line, high_time=0.01):
+    with nidaqmx.Task() as task:
+        task.do_channels.add_do_chan(clk_line)
+        task.write(False)
+        time.sleep(0.01)
+        task.write(True)
+        time.sleep(high_time)
+        task.write(False)
+        print("Clock pulse sent using DAQ.")
 
-def configure_power_supply_ch1_5v(supply):
+# ------------------- Set Digital Output (for CLR or similar control) -------------------
+
+def set_digital_output(line, value):
+    with nidaqmx.Task() as task:
+        task.do_channels.add_do_chan(line)
+        task.write(value)
+        print(f"Digital line {line} set to {'HIGH' if value else 'LOW'}.")
+
+# ------------------- Control AFG Output -------------------
+
+def control_afg_output(turn_on=True):
     try:
-        supply.write("CH1:VOLT 5")
-        supply.write("CH1:CURR 0.1")
-        supply.write("OUTP CH1,ON")
-        print("Power supply CH1 configured to 5 V and turned ON.")
+        rm = pyvisa.ResourceManager()
+        for resource in rm.list_resources():
+            try:
+                inst = rm.open_resource(resource)
+                inst.baud_rate = 9600
+                inst.data_bits = 8
+                inst.parity = pyvisa.constants.Parity.none
+                inst.stop_bits = pyvisa.constants.StopBits.one
+                inst.write_termination = '\r\n'
+                inst.read_termination = '\r\n'
+                inst.timeout = 3000
+
+                idn = inst.query("*IDN?")
+                if "GW INSTEK" in idn.upper() and "AFG-2005" in idn.upper():
+                    if turn_on:
+                        inst.write("OUTP1 ON")
+                        print("AFG-2005 CH1 output enabled.")
+                    else:
+                        inst.write("OUTP1 OFF")
+                        print("AFG-2005 CH1 output disabled.")
+                    return
+            except Exception:
+                continue
     except Exception as e:
-        print("Error configuring power supply:", e)
+        print("Error controlling AFG output:", e)
 
-# ------------------- Detect and Control GW Instek Function Generator -------------------
+# ------------------- Control SPD3303X-E Power Supply -------------------
 
-def detect_and_configure_gwinstek_afg():
-    rm = pyvisa.ResourceManager()
-    resources = rm.list_resources()
-    for resource in resources:
-        try:
-            instrument = rm.open_resource(resource)
-            idn = instrument.query("*IDN?")
-            if "GW INSTEK" in idn.upper():
-                # Configura señal cuadrada de 1 Hz, 5Vpp, offset 2.5V
-                instrument.write("APPL:SQU 1,5,2.5")
-                instrument.write("OUTP OFF")
-                print("Function generator detected and configured.")
-                return instrument
-        except Exception:
-            pass
-    print("Function generator not found.")
-    return None
+def control_siglent_ch1(voltage=0.0, current=0.1, output_on=True):
+    try:
+        rm = pyvisa.ResourceManager()
+        for resource in rm.list_resources():
+            try:
+                inst = rm.open_resource(resource)
+                inst.baud_rate = 9600
+                inst.timeout = 3000
+                inst.write_termination = '\n'
+                inst.read_termination = '\n'
 
-def send_clock_pulse(generator):
-    generator.write("OUTP ON")
-    time.sleep(1.2)
-    generator.write("OUTP OFF")
+                idn = inst.query("*IDN?")
+                if "SIGLENT" in idn.upper() and "SPD3303X" in idn.upper():
+                    inst.write(f"CH1:VOLT {voltage}")
+                    inst.write(f"CH1:CURR {current}")
+                    inst.write("CH1:MODE VOLT")
+                    inst.write(f"OUTP CH1,{'ON' if output_on else 'OFF'}")
+                    print(f"SIGLENT CH1 set to {voltage} V, {current} A, Output {'ON' if output_on else 'OFF'}.")
+                    return
+            except Exception:
+                continue
+    except Exception as e:
+        print("Error controlling SPD3303X-E:", e)
 
-# ------------------- Read Voltage from Fluke 45 -------------------
+# ------------------- Read Voltage from Fluke 45 Multimeter -------------------
 
 def remove_duplicate(measurement):
     measurement = measurement.strip()
@@ -100,46 +127,87 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
         print("Error connecting to multimeter:", e)
         return None
 
-# ------------------- Voltage Sweep with Clock Pulse -------------------
+# ------------------- Voltage Sweep Routine (Descending) -------------------
 
-def perform_descending_voltage_sweep_with_clk(ao_channel='Dev1/ao0', fluke_port='ASRL9::INSTR', generator=None):
+def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1',
+                                                  fluke_port='ASRL9::INSTR',
+                                                  clk_line='Dev1/port1/line1',
+                                                  clr_line='Dev1/port1/line0'):
     results = []
 
-    for voltage in [round(v * 0.1, 2) for v in range(50, -1, -1)]:
-        print(f"\nApplying {voltage} V to {ao_channel} (J input)...")
-        set_daq_analog_output(ao_channel, voltage)
-        time.sleep(0.5)
+    # Set CLR LOW then HIGH to clear the flip-flop
+    set_digital_output(clr_line, False)
+    time.sleep(0.5)
+    set_digital_output(clr_line, True)
+    time.sleep(0.5)
 
-        if generator:
-            print("Sending clock pulse...")
-            send_clock_pulse(generator)
-            time.sleep(0.5)
+    # Initialize Q = 1 by setting J = 1, K = 0 and sending a clock pulse
+    print("\nInitializing Q to logic 1 (J=1, K=0, clock pulse)...")
+    set_daq_analog_output(ao_j, 5.0)
+    set_daq_analog_output(ao_k, 0.0)
+    send_daq_clock_pulse(clk_line)
+    time.sleep(1)
 
+    # Sweep J from 2.5V to 0V, keeping K = 5V
+    for voltage in [round(v * 0.1, 2) for v in reversed(range(0, 26))]:  # 2.5 to 0.0
+        print(f"\nApplying {voltage} V to J (AO0)...")
+        set_daq_analog_output(ao_j, voltage)
+        set_daq_analog_output(ao_k, 5.0)  # Keep K at 5 V
+
+        # Send clock pulse
+        send_daq_clock_pulse(clk_line)
+        time.sleep(1)
+
+        # Read Q voltage from multimeter
         measured = read_voltage_with_fluke45(port=fluke_port)
-        results.append({'AO Voltage (J) (V)': voltage, 'Q Voltage (V)': measured})
+
+        # Determine logic level of Q
+        logic_q = 'H' if measured and float(measured) > 2.0 else 'L'
+
+        results.append({
+            'J Voltage (V)': voltage,
+            'Measured Q (V)': measured,
+            'Q Logic State': logic_q
+        })
 
     df = pd.DataFrame(results)
-    print("\nSweep Results (with CLK):")
+    print("\nSweep Results:")
     print(df.to_string(index=False))
 
-    df.to_csv("voltage_sweep_with_clk.csv", index=False)
-    print("\nResults saved to 'voltage_sweep_with_clk.csv'.")
+    df.to_csv("voltage_descending_sweep_results.csv", index=False)
+    print("\nResults saved to 'voltage_descending_sweep_results.csv'.")
 
     return df
 
 # ------------------- Main -------------------
 
 if __name__ == "__main__":
-    power_supply = detect_siglent_power_supply()
-    if power_supply:
-        configure_power_supply_ch1_5v(power_supply)
-    else:
-        print("Siglent SPD3303X-E power supply not detected.")
+    # Apagar generador de funciones
+    control_afg_output(False)
 
-    generator = detect_and_configure_gwinstek_afg()
+    # Configurar y apagar CH1 (0 V, 100 mA)
+    control_siglent_ch1(voltage=0.0, current=0.1, output_on=False)
+    time.sleep(3)
 
-    perform_descending_voltage_sweep_with_clk(
-        ao_channel='Dev1/ao0',
+    # Encender CH1 con 5 V y 100 mA
+    control_siglent_ch1(voltage=5.0, current=0.1, output_on=True)
+
+    # Set CLK line LOW initially
+    set_digital_output('Dev1/port1/line1', False)
+
+    # Ejecutar el barrido de voltaje
+    perform_descending_voltage_sweep_and_measure(
+        ao_j='Dev1/ao0',
+        ao_k='Dev1/ao1',
         fluke_port='ASRL9::INSTR',
-        generator=generator
+        clk_line='Dev1/port1/line1',
+        clr_line='Dev1/port1/line0'
     )
+
+    # Reset J, K, and CLR to 0
+    set_daq_analog_output('Dev1/ao0', 0.0)
+    set_daq_analog_output('Dev1/ao1', 0.0)
+    set_digital_output('Dev1/port1/line0', False)
+
+    # Apagar CH1 y poner voltaje a 0
+    control_siglent_ch1(voltage=0.0, current=0.1, output_on=False)

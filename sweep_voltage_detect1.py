@@ -54,7 +54,46 @@ def power_supply_ch1_off(supply):
     except Exception as e:
         print("Error turning off power supply CH1:", e)
 
-# ------------------- Set Digital Output (for CLR) -------------------
+# ------------------- Configure GW Instek AFG-2005 -------------------
+
+def detect_and_configure_gwinstek_afg():
+    rm = pyvisa.ResourceManager()
+    resources = rm.list_resources()
+
+    for resource in resources:
+        try:
+            gen = rm.open_resource(resource)
+            gen.baud_rate = 9600
+            gen.data_bits = 8
+            gen.parity = pyvisa.constants.Parity.none
+            gen.stop_bits = pyvisa.constants.StopBits.one
+            gen.write_termination = '\r\n'
+            gen.read_termination = '\r\n'
+            gen.timeout = 3000
+
+            idn = gen.query("*IDN?")
+            if "GW INSTEK" in idn.upper() and "AFG-2005" in idn.upper():
+                gen.write("SOUR1:APPLy:SQU 1000,5,2.5")
+                time.sleep(0.2)
+                gen.write("OUTP1 ON")
+
+                freq = gen.query("SOUR1:FREQ?")
+                volt = gen.query("SOUR1:VOLT?")
+                offs = gen.query("SOUR1:VOLT:OFFS?")
+                outp = gen.query("OUTP1?")
+
+                print("Function generator configured:")
+                print(f" - Frequency: {freq.strip()} Hz")
+                print(f" - Amplitude: {volt.strip()} Vpp")
+                print(f" - Offset: {offs.strip()} V")
+                print(f" - Output: {'ON' if outp.strip() == '1' else 'OFF'}")
+
+                return gen
+        except Exception:
+            pass
+    return None
+
+# ------------------- Set Digital Output (for CLR and PRE) -------------------
 
 def set_digital_output(line, value):
     with nidaqmx.Task() as task:
@@ -102,16 +141,30 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
 
 def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_port='ASRL9::INSTR'):
     results = []
+    logic_threshold = 2.5
 
-    # Sweep J from 0 to 2.5 V in steps of 0.1 V, keeping K low
+    set_digital_output('Dev1/port1/line1', False)
+    print("Digital line Dev1/port1/line1 set to LOW (initial condition).")
+
     for voltage in [round(v * 0.1, 2) for v in range(0, 26)]:
         print(f"\nApplying {voltage} V to J (AO0)...")
         set_daq_analog_output(ao_j, voltage)
-        set_daq_analog_output(ao_k, 0.0)  # Keep K low
-        time.sleep(0.25)  # Wait for stabilization
+        set_daq_analog_output(ao_k, 0.0)
+        time.sleep(0.5)
 
         measured = read_voltage_with_fluke45(port=fluke_port)
-        results.append({'J Voltage (V)': voltage, 'Measured Voltage (V)': measured})
+
+        try:
+            measured_val = float(measured)
+            logic_state = "H" if measured_val >= logic_threshold else "L"
+        except:
+            logic_state = "?"
+
+        results.append({
+            'J Voltage (V)': voltage,
+            'Measured Voltage (V)': measured,
+            'Q State': logic_state
+        })
 
     df = pd.DataFrame(results)
     print("\nSweep Results:")
@@ -125,39 +178,30 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
 # ------------------- Main -------------------
 
 if __name__ == "__main__":
-    # Detect and configure power supply
     power_supply = detect_siglent_power_supply()
     if power_supply:
-        # At start: set CH1 to 0 V and turn it OFF
         configure_power_supply_ch1_0v_off(power_supply)
-
-        # Wait to confirm CH1 is OFF and at 0 V
-        time.sleep(5)
-
-        # Turn ON CH1 and configure to 5 V for operation
+        time.sleep(3)
         configure_power_supply_ch1_5v_on(power_supply)
+        afg = detect_and_configure_gwinstek_afg()
+        if not afg:
+            print("GW Instek AFG-2005 generator not detected.")
     else:
         print("Siglent SPD3303X-E power supply not detected.")
 
-    # CLR starts LOW (0), wait, then set HIGH (1)
     set_digital_output('Dev1/port1/line0', False)
     time.sleep(1)
     set_digital_output('Dev1/port1/line0', True)
 
-    # Initialize J (AO0) and K (AO1) at 0 V (LOW)
-    #set_daq_analog_output('Dev1/ao0', 0.0)  # J LOW
-    #set_daq_analog_output('Dev1/ao1', 1.0)  # K HIGH
+    set_daq_analog_output('Dev1/ao0', 0.0)
+    set_daq_analog_output('Dev1/ao1', 1.0)
 
-    # Perform sweep on J (AO0)
     perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_port='ASRL9::INSTR')
 
-    # At end of sweep, set J and K to 0 V (LOW)
     set_daq_analog_output('Dev1/ao0', 0.0)
     set_daq_analog_output('Dev1/ao1', 0.0)
 
-    # Set CLR LOW (0) at end
     set_digital_output('Dev1/port1/line0', False)
 
-    # Turn off CH1 output of power supply at end
     if power_supply:
         power_supply_ch1_off(power_supply)
