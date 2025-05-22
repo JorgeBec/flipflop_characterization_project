@@ -107,7 +107,7 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
         instrument.timeout = 5000
 
         instrument.write("VOLT")
-        time.sleep(1)
+        time.sleep(1.5)
 
         try:
             instrument.query("VAL1?")
