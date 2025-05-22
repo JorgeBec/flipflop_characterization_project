@@ -107,7 +107,7 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
         instrument.timeout = 5000
 
         instrument.write("VOLT")
-        time.sleep(1.5)
+        time.sleep(2)
 
         try:
             instrument.query("VAL1?")
@@ -149,7 +149,7 @@ def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1
     time.sleep(1)
 
     # Sweep J from 2.5V to 0V, keeping K = 5V
-    for voltage in [round(v * 0.1, 2) for v in reversed(range(0, 26))]:  # 2.5 to 0.0
+    for voltage in [round(v * 0.05, 2) for v in reversed(range(0, 21))]:  # 2.5 to 0.0
         print(f"\nApplying {voltage} V to J (AO0)...")
         set_daq_analog_output(ao_j, voltage)
         set_daq_analog_output(ao_k, 5.0)  # Keep K at 5 V
@@ -159,7 +159,8 @@ def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1
         time.sleep(1)
 
         # Read Q voltage from multimeter
-        measured = read_voltage_with_fluke45(port=fluke_port)
+        measured = read_voltage_with_validation(port=fluke_port)
+
 
         # Determine logic level of Q
         logic_q = 'H' if measured and float(measured) > 2.0 else 'L'
@@ -178,6 +179,26 @@ def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1
     print("\nResults saved to 'voltage_descending_sweep_results.csv'.")
 
     return df
+
+# ------------------- Validate Voltage Reading -------------------
+
+def is_valid_voltage(val_str, min_v=0.0, max_v=6.0):
+    try:
+        val = float(val_str)
+        return min_v <= val <= max_v
+    except (ValueError, TypeError):
+        return False
+
+def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
+    for attempt in range(max_retries):
+        voltage_str = read_voltage_with_fluke45(port)
+        if is_valid_voltage(voltage_str):
+            return voltage_str
+        print(f"Invalid reading '{voltage_str}', retrying ({attempt + 1}/{max_retries})...")
+        time.sleep(delay)
+    print("Warning: Maximum retries reached. Returning last invalid reading.")
+    return voltage_str  # Último intento, aunque sea inválido
+
 
 # ------------------- Main -------------------
 

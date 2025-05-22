@@ -18,17 +18,31 @@ def set_daq_analog_output(channel, voltage):
 # ------------------- Detect and Configure Siglent Power Supply -------------------
 
 def detect_siglent_power_supply():
+    import re
     rm = pyvisa.ResourceManager()
     resources = rm.list_resources()
+    print("🔍 VISA Resources found:", resources)
+
+    siglent_pattern = re.compile(r"SIGLENT.*SPD3303X-E", re.IGNORECASE)
+
     for resource in resources:
         try:
+            print(f"🔌 Trying resource: {resource}")
             instrument = rm.open_resource(resource)
-            idn = instrument.query("*IDN?")
-            if "SIGLENT" in idn.upper() and "SPD3303X-E" in idn.upper():
+            instrument.timeout = 3000
+            idn = instrument.query("*IDN?").strip()
+            print(f"🧾 Response from {resource}: {idn}")
+
+            if siglent_pattern.search(idn):
+                print(f"✅ Detected Siglent SPD3303X-E at {resource}")
                 return instrument
-        except Exception:
-            pass
+
+        except Exception as e:
+            print(f"⚠️ Error probing {resource}: {e}")
+
+    print("❌ Siglent SPD3303X-E power supply not detected.")
     return None
+
 
 def configure_power_supply_ch1_0v_off(supply):
     try:
@@ -74,8 +88,9 @@ def detect_and_configure_gwinstek_afg():
             idn = gen.query("*IDN?")
             if "GW INSTEK" in idn.upper() and "AFG-2005" in idn.upper():
                 gen.write("SOUR1:APPLy:SQU 1000,5,2.5")
-                time.sleep(0.2)
+                time.sleep(1)
                 gen.write("OUTP1 ON")
+                time.sleep(1)
 
                 freq = gen.query("SOUR1:FREQ?")
                 volt = gen.query("SOUR1:VOLT?")
@@ -117,7 +132,7 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
         instrument.timeout = 5000
 
         instrument.write("VOLT")
-        time.sleep(0.5)
+        time.sleep(1)
 
         try:
             instrument.query("VAL1?")
@@ -146,13 +161,13 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
     set_digital_output('Dev1/port1/line1', False)
     print("Digital line Dev1/port1/line1 set to LOW (initial condition).")
 
-    for voltage in [round(v * 0.1, 2) for v in range(0, 26)]:
+    for voltage in [round(v * 0.05, 2) for v in range(0, 31)]:
         print(f"\nApplying {voltage} V to J (AO0)...")
         set_daq_analog_output(ao_j, voltage)
         set_daq_analog_output(ao_k, 0.0)
-        time.sleep(0.5)
+        time.sleep(1)
 
-        measured = read_voltage_with_fluke45(port=fluke_port)
+        measured = read_voltage_with_validation(port=fluke_port)
 
         try:
             measured_val = float(measured)
@@ -175,6 +190,27 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
 
     return df
 
+
+# ------------------- Validate Voltage Reading -------------------
+
+def is_valid_voltage(val_str, min_v=0.0, max_v=6.0):
+    try:
+        val = float(val_str)
+        return min_v <= val <= max_v
+    except (ValueError, TypeError):
+        return False
+
+def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
+    for attempt in range(max_retries):
+        voltage_str = read_voltage_with_fluke45(port)
+        if is_valid_voltage(voltage_str):
+            return voltage_str
+        print(f"Invalid reading '{voltage_str}', retrying ({attempt + 1}/{max_retries})...")
+        time.sleep(delay)
+    print("Warning: Maximum retries reached. Returning last invalid reading.")
+    return voltage_str  # Último intento, aunque sea inválido
+
+
 # ------------------- Main -------------------
 
 if __name__ == "__main__":
@@ -183,12 +219,12 @@ if __name__ == "__main__":
         configure_power_supply_ch1_0v_off(power_supply)
         time.sleep(3)
         configure_power_supply_ch1_5v_on(power_supply)
-        afg = detect_and_configure_gwinstek_afg()
-        if not afg:
-            print("GW Instek AFG-2005 generator not detected.")
+            
     else:
         print("Siglent SPD3303X-E power supply not detected.")
-
+    
+    detect_and_configure_gwinstek_afg()
+    time.sleep(1)
     set_digital_output('Dev1/port1/line0', False)
     time.sleep(1)
     set_digital_output('Dev1/port1/line0', True)
