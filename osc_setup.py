@@ -9,8 +9,8 @@ def setup_oscilloscope():
     print("Oscilloscope ID:", osc.query("*IDN?"))
 
     # Configuration commands
-        osc.write("SELECT:CH1 ON")
-        osc.write("SELECT:CH2 ON")
+    osc.write("SELECT:CH1 ON")
+    osc.write("SELECT:CH2 ON")
     osc.write("CH1:COUPLING DC")
     osc.write("CH2:COUPLING DC")
     osc.write("CH1:SCALE 1")
