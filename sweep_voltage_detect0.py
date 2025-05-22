@@ -39,6 +39,31 @@ def configure_power_supply_ch1_5v(supply):
     except Exception as e:
         print("Error configuring power supply:", e)
 
+# ------------------- Detect and Control GW Instek Function Generator -------------------
+
+def detect_and_configure_gwinstek_afg():
+    rm = pyvisa.ResourceManager()
+    resources = rm.list_resources()
+    for resource in resources:
+        try:
+            instrument = rm.open_resource(resource)
+            idn = instrument.query("*IDN?")
+            if "GW INSTEK" in idn.upper():
+                # Configura señal cuadrada de 1 Hz, 5Vpp, offset 2.5V
+                instrument.write("APPL:SQU 1,5,2.5")
+                instrument.write("OUTP OFF")
+                print("Function generator detected and configured.")
+                return instrument
+        except Exception:
+            pass
+    print("Function generator not found.")
+    return None
+
+def send_clock_pulse(generator):
+    generator.write("OUTP ON")
+    time.sleep(1.2)
+    generator.write("OUTP OFF")
+
 # ------------------- Read Voltage from Fluke 45 -------------------
 
 def remove_duplicate(measurement):
@@ -55,7 +80,7 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
         instrument.timeout = 5000
 
         instrument.write("VOLT")
-        time.sleep(2)
+        time.sleep(1)
 
         try:
             instrument.query("VAL1?")
@@ -75,37 +100,46 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
         print("Error connecting to multimeter:", e)
         return None
 
-# ------------------- Voltage Sweep Routine -------------------
+# ------------------- Voltage Sweep with Clock Pulse -------------------
 
-def perform_voltage_sweep_and_measure(ao_channel='Dev1/ao0', fluke_port='ASRL9::INSTR'):
+def perform_descending_voltage_sweep_with_clk(ao_channel='Dev1/ao0', fluke_port='ASRL9::INSTR', generator=None):
     results = []
 
-    for voltage in [round(v * 0.1, 2) for v in range(0, 51)]:
-        print(f"\nApplying {voltage} V to {ao_channel}...")
+    for voltage in [round(v * 0.1, 2) for v in range(50, -1, -1)]:
+        print(f"\nApplying {voltage} V to {ao_channel} (J input)...")
         set_daq_analog_output(ao_channel, voltage)
-        time.sleep(1)  # Allow time for settling
+        time.sleep(0.5)
+
+        if generator:
+            print("Sending clock pulse...")
+            send_clock_pulse(generator)
+            time.sleep(0.5)
 
         measured = read_voltage_with_fluke45(port=fluke_port)
-        results.append({'AO Voltage (V)': voltage, 'Measured Voltage (V)': measured})
+        results.append({'AO Voltage (J) (V)': voltage, 'Q Voltage (V)': measured})
 
     df = pd.DataFrame(results)
-    print("\nSweep Results:")
+    print("\nSweep Results (with CLK):")
     print(df.to_string(index=False))
 
-    df.to_csv("voltage_sweep_results.csv", index=False)
-    print("\nResults saved to 'voltage_sweep_results.csv'.")
+    df.to_csv("voltage_sweep_with_clk.csv", index=False)
+    print("\nResults saved to 'voltage_sweep_with_clk.csv'.")
 
     return df
 
 # ------------------- Main -------------------
 
 if __name__ == "__main__":
-    # Configure CH1 to 5 V if power supply is connected
     power_supply = detect_siglent_power_supply()
     if power_supply:
         configure_power_supply_ch1_5v(power_supply)
     else:
         print("Siglent SPD3303X-E power supply not detected.")
 
-    # Perform the voltage sweep and measurements
-    perform_voltage_sweep_and_measure(ao_channel='Dev1/ao0', fluke_port='ASRL9::INSTR')
+    generator = detect_and_configure_gwinstek_afg()
+
+    perform_descending_voltage_sweep_with_clk(
+        ao_channel='Dev1/ao0',
+        fluke_port='ASRL9::INSTR',
+        generator=generator
+    )
