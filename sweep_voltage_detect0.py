@@ -149,7 +149,7 @@ def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1
     time.sleep(1)
 
     # Sweep J from 2.5V to 0V, keeping K = 5V
-    for voltage in [round(v * 0.1, 2) for v in reversed(range(0, 21))]:  # 2.5 to 0.0
+    for voltage in [round(v * 0.05, 2) for v in reversed(range(0, 31))]:  # 2.5 to 0.0
         print(f"\nApplying {voltage} V to J (AO0)...")
         set_daq_analog_output(ao_j, voltage)
         set_daq_analog_output(ao_k, 5.0)  # Keep K at 5 V

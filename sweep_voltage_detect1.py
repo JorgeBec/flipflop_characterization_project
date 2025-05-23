@@ -162,7 +162,7 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
     set_digital_output('Dev1/port1/line1', False)
     print("Digital line Dev1/port1/line1 set to LOW (initial condition).")
 
-    for voltage in [round(v * 0.1, 2) for v in range(0, 31)]:
+    for voltage in [round(v * 0.05, 2) for v in range(0, 31)]:
         print(f"\nApplying {voltage} V to J (AO0)...")
         set_daq_analog_output(ao_j, voltage)
         set_daq_analog_output(ao_k, 0.0)
@@ -178,15 +178,15 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
 
         results.append({
             'J Voltage (V)': voltage,
-            'Measured Voltage (V)': measured,
-            'Q State': logic_state
+            'Q Voltage (V)': measured,
+            'Q Logic State': logic_state
         })
 
     df = pd.DataFrame(results)
     print("\nSweep Results:")
     print(df.to_string(index=False))
 
-    df.to_csv("voltage_sweep_results.csv", index=False)
+    df.to_csv("voltage_ascending_sweep_results.csv", index=False)
     print("\nResults saved to 'voltage_ascending_sweep_results.csv'.")
 
     return df
