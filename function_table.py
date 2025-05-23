@@ -4,6 +4,7 @@ import time
 import re
 import csv
 
+
 # ------------------- Fluke 45 Multimeter -------------------
 def remove_duplicate(measurement):
     pattern = r'[+-]?\d+\.\d+E[+-]?\d+'
@@ -33,6 +34,16 @@ def read_voltage_fluke45(port='ASRL9::INSTR'):
     except Exception as e:
         print("Error communicating with Fluke 45:", e)
         return None
+# ------------------- Safe Voltage Reading -------------------
+def safe_voltage_read_fluke45(max_attempts=3, min_v=0.0, max_v=6.0):
+    for attempt in range(max_attempts):
+        voltage = read_voltage_fluke45()
+        if voltage is not None and min_v <= voltage <= max_v:
+            return voltage
+        print(f"Warning: Invalid voltage reading ({voltage}), retrying ({attempt+1}/{max_attempts})...")
+        time.sleep(0.5)
+    print("Failed to get a valid voltage after retries.")
+    return None
 
 # ------------------- DAQ -------------------
 def set_daq_analog_output(channel, voltage):
@@ -151,7 +162,8 @@ def generate_function_table():
         pulse_clk()
 
         time.sleep(0.5)
-        voltage = read_voltage_fluke45() or "?>"
+        voltage = safe_voltage_read_fluke45() or "?>"
+
         print(f"  {clr}   |  {j}  |  {k}  |   {voltage}")
         results.append((clr, j, k, voltage))
 
@@ -164,7 +176,7 @@ def generate_function_table():
 
     print("\nTable saved to 'function_table.csv'.")
 
-# ------------------- MAIN -------------------
+
 # ------------------- MAIN -------------------
 if __name__ == "__main__":
     psu = None
