@@ -11,7 +11,7 @@ devices = rm.list_resources()
 
 osc = rm.open_resource(devices[0])
 
-initialize_daq_outputs_zero("Dev1")
+#initialize_daq_outputs_zero("Dev1")
 
 
 ### -- User inputs -- ###
@@ -42,6 +42,7 @@ with nidaqmx.Task() as task:
     task.write([4.5, 4.5])  # Write voltages to ao0 and ao1 simultaneously
 
 ##DAQ
+# clock flank down
 with nidaqmx.Task() as task:
     task.do_channels.add_do_chan("Dev1/port1/line3")
     task.write(True)  # Write voltages to ao0 and ao1 simultaneously
@@ -49,7 +50,7 @@ with nidaqmx.Task() as task:
     task.write(False)  # Write voltages to ao0 and ao1 simultaneously
 
 time.sleep(0.1)  # Wait for 100 ms
-initialize_daq_outputs_zero("Dev1")
+
 
 
 
@@ -91,7 +92,7 @@ print("array with voltages of ch2: ",time2)
 # Create and save DataFrame
 df = pd.DataFrame({
     "Time (s)": time1,
-    "Voltage (V)": volts2
+    "Voltage (V)": volts1
 })
 df.to_csv("channel1_capture.csv", index=False)
 
