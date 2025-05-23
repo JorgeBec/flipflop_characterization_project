@@ -178,15 +178,15 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
 
         results.append({
             'J Voltage (V)': voltage,
-            'Measured Voltage (V)': measured,
-            'Q State': logic_state
+            'Q Voltage (V)': measured,
+            'Q Logic State': logic_state
         })
 
     df = pd.DataFrame(results)
     print("\nSweep Results:")
     print(df.to_string(index=False))
 
-    df.to_csv("voltage_sweep_results.csv", index=False)
+    df.to_csv("voltage_ascending_sweep_results.csv", index=False)
     print("\nResults saved to 'voltage_ascending_sweep_results.csv'.")
 
     return df
