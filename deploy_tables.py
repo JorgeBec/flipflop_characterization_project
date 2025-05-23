@@ -5,10 +5,12 @@ from tkinter import ttk
 # Archivos CSV
 voltage_ascending_sweep_results = 'voltage_ascending_sweep_results_3.csv'
 voltage_descending_sweep_results = 'voltage_descending_sweep_results_3.csv'
+function_table_file = 'function_table.csv'
 
 # Cargar los datos
 a = pd.read_csv(voltage_ascending_sweep_results)
 b = pd.read_csv(voltage_descending_sweep_results)
+c = pd.read_csv(function_table_file)
 
 # Crear ventana principal
 root = tk.Tk()
@@ -39,6 +41,7 @@ def create_table_tab(dataframe, tab_name):
 # Crear las pestañas
 create_table_tab(a, "Ascending Sweep")
 create_table_tab(b, "Descending Sweep")
+create_table_tab(c, "Function Table")
 
 # Ejecutar ventana
 root.mainloop()

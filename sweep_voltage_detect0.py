@@ -167,7 +167,7 @@ def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1
 
         results.append({
             'J Voltage (V)': voltage,
-            'Measured Q (V)': measured,
+            'Q Voltage (V)': measured,
             'Q Logic State': logic_q
         })
 
