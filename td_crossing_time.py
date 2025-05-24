@@ -1,32 +1,37 @@
 import numpy as np
 
-import pandas as pd
-
-import matplotlib.pyplot as plt
-from ff_setup import initialize_daq_outputs_zero
-from cap_ch import capture_channel
-
-def find_crossing_time(time, voltages, threshold):
+def find_crossing_time(time1, voltages1, time2, voltages2):
     """
-    Find the time when the waveform first reaches or exceeds the threshold.
-    No interpolation is used.
+    Find the time difference between the first threshold crossings (50% amplitude) of two waveforms.
     """
-    for i in range(len(voltages)):
-        if voltages[i] >= threshold:
-            return time[i]
-    return None  # No crossing found
+    threshold1 = (np.max(voltages1) / 2)
+    print(f"Threshold ch1: {threshold1:.3f} V")
 
-# Assuming time1, volts1 and time2, volts2 were captured from previous example
+    threshold2 = (np.max(voltages2) / 2)
+    print(f"Threshold ch2: {threshold2:.3f} V")
 
-# Define threshold voltage (50% of amplitude)
-threshold_ch1 = (np.max(volts1) + np.min(volts1)) / 2
-print("threshold_ch1", threshold_ch1)
+    cross1 = None
+    for i in range(len(voltages1)):
+        if voltages1[i] >= threshold1:
+            cross1 = time1[i]
+            print(cross1)
+            break  # Stop at first crossing
 
-threshold_ch2 = (np.max(volts2) + np.min(volts2)) / 2
-print("threshold_c2", threshold_ch2) 
-    
-# Find crossing times for rising edge
-cross_time_ch1 = find_crossing_time(time1, volts1, threshold_ch1)
-print("cross_time_ch1", cross_time_ch1)
-cross_time_ch2 = find_crossing_time(time2, volts2, threshold_ch2)
-print("cross_time_ch2", cross_time_ch2)
+    cross2 = None
+    for i in range(len(voltages2)):
+        if voltages2[i] >= threshold2:
+            cross2 = time2[i]
+            print(cross2)
+            break  # Stop at first crossing
+
+    if cross1 is None or cross2 is None:
+        print("Warning: One of the channels did not cross its threshold.")
+        return None
+
+    crossing_time = cross2 - cross1
+    print(f"Propagation delay: {crossing_time * 1e9:.2f} ns")
+    return crossing_time
+
+
+
+

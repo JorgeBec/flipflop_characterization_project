@@ -6,17 +6,22 @@ import time
 import pandas as pd
 
 import matplotlib.pyplot as plt
+from td_crossing_time import find_crossing_time
 from ff_setup import initialize_daq_outputs_zero
 from cap_ch import capture_channel
 #from td_crossing_time import find_crossing_time
 
+## -------------- Oscilloscope setup ----------------- ##
 rm = pyvisa.ResourceManager()
 devices = rm.list_resources()
 
 osc = rm.open_resource(devices[0])
 
+
+## --------------- DAQ setup ----------------- ##
 initialize_daq_outputs_zero("Dev1")
-### -- User inputs -- ###
+
+### --------------- User inputs ------------- ###
 
 #vcc_user = float(input("Vcc = "))
 #freq_user = float(input("f = "))
@@ -41,7 +46,7 @@ osc.write("TRIGger:MAIn:EDGE:SOUrce CH1")
 
 
 
-### -- DAQ set --###
+### --------------------- DAQ set --------------------###
 if type_test == "1":
     initialize_daq_outputs_zero("Dev1")
     with nidaqmx.Task() as task:    
@@ -69,7 +74,7 @@ elif type_test == "2":
         task.write([5, 0])  # Write voltages to ao0 and ao1 simultaneously
 
 
-    ##negative flank
+    ##  ----------negative ---------flank
     with nidaqmx.Task() as task:
         task.do_channels.add_do_chan("Dev1/port1/line3")
         task.write(True)  # Write voltages to ao0 and ao1 simultaneously
@@ -97,6 +102,12 @@ time1, volts1 = capture_channel(1)
 time2, volts2 = capture_channel(2)
 ############ Capture both channels ############
 
+############ Find crossing time ############
+find_crossing_time(time1, volts1, time2, volts2)
+
+############ Find crossing time ############
+
+
 
 ##########  Save data to CSV files  ########
 # Create and save DataFrame
@@ -105,7 +116,6 @@ df = pd.DataFrame({
     "Voltage (V)": volts1
 })
 df.to_csv("channel1_capture.csv", index=False)
-
 
 # Create and save DataFrame 2
 df = pd.DataFrame({
