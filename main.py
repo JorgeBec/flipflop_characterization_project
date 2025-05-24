@@ -5,11 +5,11 @@ import os
 import sys
 import threading
 
-# Ruta base donde están tus scripts
+# Base path where your scripts are located
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PYTHON_EXECUTABLE = sys.executable  # Usa el mismo Python que ejecuta la GUI
+PYTHON_EXECUTABLE = sys.executable  # Use the same Python that runs the GUI
 
-# Función para ejecutar scripts y mostrar salida en tiempo real
+# Function to execute scripts and display real-time output
 def run_script(script_name):
     def task():
         try:
@@ -21,20 +21,20 @@ def run_script(script_name):
                 text=True,
                 bufsize=1
             )
-            text_area.insert(tk.END, f"\n--- Ejecutando {script_name} ---\n")
+            text_area.insert(tk.END, f"\n--- Running {script_name} ---\n")
             for line in process.stdout:
                 text_area.insert(tk.END, line)
                 text_area.see(tk.END)
             process.wait()
-            text_area.insert(tk.END, f"\n{script_name} terminado\n")
+            text_area.insert(tk.END, f"\n{script_name} finished\n")
             text_area.see(tk.END)
         except Exception as ex:
-            text_area.insert(tk.END, f"\nError ejecutando {script_name}:\n{str(ex)}\n")
+            text_area.insert(tk.END, f"\nError running {script_name}:\n{str(ex)}\n")
             text_area.see(tk.END)
 
     threading.Thread(target=task).start()
 
-# Función para eliminar archivos CSV generados previamente
+# Function to delete previously generated CSV files
 def delete_previous_data():
     files_to_delete = [
         'function_table.csv',
@@ -47,39 +47,38 @@ def delete_previous_data():
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
-                text_area.insert(tk.END, f"Archivo eliminado: {filename}\n")
+                text_area.insert(tk.END, f"Deleted file: {filename}\n")
                 deleted_any = True
             except Exception as e:
-                text_area.insert(tk.END, f"Error al eliminar {filename}: {str(e)}\n")
+                text_area.insert(tk.END, f"Error deleting {filename}: {str(e)}\n")
     if not deleted_any:
-        text_area.insert(tk.END, "No se encontraron archivos para eliminar.\n")
+        text_area.insert(tk.END, "No files found to delete.\n")
     text_area.see(tk.END)
 
-# Interfaz gráfica
+# GUI
 root = tk.Tk()
-root.title("Estación de Pruebas - FlipFlop JK 74LS73")
+root.title("Test Station - FlipFlop JK 74LS73")
 
 frame = tk.Frame(root)
 frame.pack(padx=10, pady=10)
 
-# Botones individuales
-btn1 = tk.Button(frame, text="Detectar cambio 0 a 1", command=lambda: run_script('sweep_voltage_detect1.py'))
+# Buttons corresponding to image boxes
+btn1 = tk.Button(frame, text="Detect 0 to 1", command=lambda: run_script('sweep_voltage_detect1.py'))  # Box 1
 btn1.grid(row=0, column=0, padx=5, pady=5)
 
-btn2 = tk.Button(frame, text="Detectar cambio 1 a 0", command=lambda: run_script('sweep_voltage_detect0.py'))
+btn2 = tk.Button(frame, text="Detect 1 to 0", command=lambda: run_script('sweep_voltage_detect0.py'))  # Box 2
 btn2.grid(row=0, column=1, padx=5, pady=5)
 
-btn3 = tk.Button(frame, text="Tabla de función", command=lambda: run_script('function_table.py'))
-btn3.grid(row=1, column=0, padx=5, pady=5)
+btn3 = tk.Button(frame, text="Function Table", command=lambda: run_script('function_table.py'))  # Box 3
+btn3.grid(row=0, column=2, padx=5, pady=5)
 
-btn4 = tk.Button(frame, text="Mostrar resultados", command=lambda: run_script('deploy_tables.py'))
-btn4.grid(row=1, column=1, padx=5, pady=5)
+btn4 = tk.Button(frame, text="Show Results", command=lambda: run_script('deploy_tables.py'), bg='light green')  # Box 4
+btn4.grid(row=0, column=3, padx=5, pady=5)
 
-# Botón para eliminar datos anteriores
-btn_delete = tk.Button(frame, text="Eliminar datos anteriores", command=delete_previous_data, bg='tomato')
-btn_delete.grid(row=2, column=0, columnspan=2, pady=10)
+btn_delete = tk.Button(frame, text="Delete Data", command=delete_previous_data, bg='tomato')  # Box 5
+btn_delete.grid(row=1, column=3, padx=5, pady=5)
 
-# Área de texto para mostrar salida
+# Text area to display output
 text_area = scrolledtext.ScrolledText(root, width=100, height=25)
 text_area.pack(padx=10, pady=10)
 
