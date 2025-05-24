@@ -27,7 +27,7 @@ def detect_siglent_power_supply():
 
     for resource in resources:
         try:
-            print(f"🔌 Trying resource: {resource}")
+            #print(f"🔌 Trying resource: {resource}")
             instrument = rm.open_resource(resource)
             instrument.timeout = 3000
             idn = instrument.query("*IDN?").strip()

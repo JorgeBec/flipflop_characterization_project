@@ -1,16 +1,12 @@
 import pandas as pd
 import tkinter as tk
 from tkinter import ttk
+import os
 
 # Archivos CSV
-voltage_ascending_sweep_results = 'voltage_ascending_sweep_results_3.csv'
-voltage_descending_sweep_results = 'voltage_descending_sweep_results_3.csv'
+voltage_ascending_sweep_results = 'voltage_ascending_sweep_results.csv'
+voltage_descending_sweep_results = 'voltage_descending_sweep_results.csv'
 function_table_file = 'function_table.csv'
-
-# Cargar los datos
-a = pd.read_csv(voltage_ascending_sweep_results)
-b = pd.read_csv(voltage_descending_sweep_results)
-c = pd.read_csv(function_table_file)
 
 # Crear ventana principal
 root = tk.Tk()
@@ -38,10 +34,27 @@ def create_table_tab(dataframe, tab_name):
     for _, row in dataframe.iterrows():
         tree.insert('', 'end', values=list(row))
 
-# Crear las pestañas
-create_table_tab(a, "Ascending Sweep")
-create_table_tab(b, "Descending Sweep")
-create_table_tab(c, "Function Table")
+# Cargar y mostrar los datos si existen
+if os.path.exists(voltage_ascending_sweep_results):
+    a = pd.read_csv(voltage_ascending_sweep_results)
+    create_table_tab(a, "Ascending Sweep")
+
+if os.path.exists(voltage_descending_sweep_results):
+    b = pd.read_csv(voltage_descending_sweep_results)
+    create_table_tab(b, "Descending Sweep")
+
+if os.path.exists(function_table_file):
+    c = pd.read_csv(function_table_file)
+    create_table_tab(c, "Function Table")
+
+# Mensaje si no se encontró ningún archivo
+if not any([
+    os.path.exists(voltage_ascending_sweep_results),
+    os.path.exists(voltage_descending_sweep_results),
+    os.path.exists(function_table_file)
+]):
+    label = tk.Label(root, text="⚠️ No se encontraron archivos CSV para mostrar.", font=("Arial", 14))
+    label.pack(pady=20)
 
 # Ejecutar ventana
 root.mainloop()
