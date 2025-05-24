@@ -4,7 +4,7 @@ import time
 def initialize_daq_outputs_zero(device_name="Dev1"):
     # Analog ports
     with nidaqmx.Task() as task:
-        # J and K
+        # J AO0 and K AO1
         task.ao_channels.add_ao_voltage_chan(f"{device_name}/ao0", min_val=0, max_val=5) #K
         task.ao_channels.add_ao_voltage_chan(f"{device_name}/ao1", min_val=0, max_val=5) #J
 
@@ -14,7 +14,7 @@ def initialize_daq_outputs_zero(device_name="Dev1"):
         
     #digital ports
     with nidaqmx.Task() as do_task:
-        # CLR pin
+        # CLR P1.0 and CLK P1.1
         do_task.do_channels.add_do_chan(f"{device_name}/port1/line2")
         do_task.do_channels.add_do_chan(f"{device_name}/port1/line3")
 
