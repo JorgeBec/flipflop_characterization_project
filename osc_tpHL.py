@@ -25,7 +25,7 @@ initialize_daq_outputs_zero("Dev1")
 
 #vcc_user = float(input("Vcc = "))
 #freq_user = float(input("f = "))
-type_test = input("1) HL\n2) LH \nIngresa el tipo de prueba \n")
+type_test = "HL"
 
 
 ### -- display set -- ###
@@ -47,63 +47,48 @@ osc.write("TRIGger:MAIn:EDGE:SOUrce CH1")
 
 
 ### --------------------- DAQ set --------------------###
-if type_test == "1":
-    initialize_daq_outputs_zero("Dev1")
-    with nidaqmx.Task() as task:    
-        task.ao_channels.add_ao_voltage_chan("Dev1/ao0", min_val=0, max_val=5) #K
-        task.ao_channels.add_ao_voltage_chan("Dev1/ao1", min_val=0, max_val=5) #J
-        task.write([0, 5])  # Write voltages to ao0 and ao1 simultaneously
-    
-    ##negative flank
-    with nidaqmx.Task() as task:
-        task.do_channels.add_do_chan("Dev1/port1/line3")
-        task.write(True)  # Write voltages to ao0 and ao1 simultaneously
-        time.sleep(0.1)  # Wait for 100 ms
-        task.write(False)  # Write voltages to ao0 and ao1 simultaneously
-    
-    with nidaqmx.Task() as task:       
-        task.ao_channels.add_ao_voltage_chan("Dev1/ao0", min_val=0, max_val=5) #K
-        task.ao_channels.add_ao_voltage_chan("Dev1/ao1", min_val=0, max_val=5) #J
-        task.write([5, 0])  # Write voltages to ao0 and ao1 simultaneously      
+initialize_daq_outputs_zero("Dev1")
+with nidaqmx.Task() as task:    
+    task.ao_channels.add_ao_voltage_chan("Dev1/ao0", min_val=0, max_val=5) #J
+    task.ao_channels.add_ao_voltage_chan("Dev1/ao1", min_val=0, max_val=5) #K
+    task.write([5, 0])  # Write voltages to ao0 and ao1 simultaneously
 
-elif type_test == "2":
-    initialize_daq_outputs_zero("Dev1")
-    with nidaqmx.Task() as task:    
-        task.ao_channels.add_ao_voltage_chan("Dev1/ao0", min_val=0, max_val=5) #K
-        task.ao_channels.add_ao_voltage_chan("Dev1/ao1", min_val=0, max_val=5) #J
-        task.write([5, 0])  # Write voltages to ao0 and ao1 simultaneously
-
-
-    ##  ----------negative ---------flank
-    with nidaqmx.Task() as task:
-        task.do_channels.add_do_chan("Dev1/port1/line3")
-        task.write(True)  # Write voltages to ao0 and ao1 simultaneously
-        time.sleep(0.1)  # Wait for 100 ms
-        task.write(False)  # Write voltages to ao0 and ao1 simultaneously
-
-        
-    with nidaqmx.Task() as task:        
-        task.ao_channels.add_ao_voltage_chan("Dev1/ao0", min_val=0, max_val=5) #K
-        task.ao_channels.add_ao_voltage_chan("Dev1/ao1", min_val=0, max_val=5) #J
-        task.write([0, 5])  # Write voltages to ao0 and ao1 simultaneously
-
-### capture with negative flank
+##negative flank - capture high
 with nidaqmx.Task() as task:
-    task.do_channels.add_do_chan("Dev1/port1/line3")
+    task.do_channels.add_do_chan("Dev1/port1/line1")
     task.write(True)  # Write voltages to ao0 and ao1 simultaneously
     time.sleep(0.1)  # Wait for 100 ms
     task.write(False)  # Write voltages to ao0 and ao1 simultaneously
 
-time.sleep(0.1)  # Wait for 100 ms
+#transit to low
+with nidaqmx.Task() as task:       
+    task.ao_channels.add_ao_voltage_chan("Dev1/ao0", min_val=0, max_val=5) #J
+    task.ao_channels.add_ao_voltage_chan("Dev1/ao1", min_val=0, max_val=5) #K
+    task.write([0, 5])  # High to Low ready to Low    
+
+
+        
+time.sleep(0.2)  # Wait for 100 ms    
+##negative flank - capture high
+with nidaqmx.Task() as task:
+    task.do_channels.add_do_chan("Dev1/port1/line1") #clk
+    task.write(True)  # Write voltages to ao0 and ao1 simultaneously
+    time.sleep(0.1)  # Wait for 100 ms
+    task.write(False)  # Write voltages to ao0 and ao1 simultaneously
+
+
 ### -- DAQ set --###
 
+## ------------------------- Captrure data ------------------------- ##
 ############ Capture both channels ############
 time1, volts1 = capture_channel(1)
 time2, volts2 = capture_channel(2)
 ############ Capture both channels ############
 
+
+
 ############ Find crossing time ############
-find_crossing_time(time1, volts1, time2, volts2)
+find_crossing_time(time1, volts1, time2, volts2,type_test)
 
 ############ Find crossing time ############
 
@@ -127,7 +112,7 @@ df.to_csv("channel2_capture.csv", index=False)
 
 
 
-initialize_daq_outputs_zero("Dev1")
+#initialize_daq_outputs_zero("Dev1")
 ### -- oscilloscope plot -- ###
 
 # Plot
