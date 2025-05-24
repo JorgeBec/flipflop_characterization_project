@@ -2,7 +2,7 @@ import pyvisa
 import time
 import re
 import nidaqmx
-import pandas as pd
+from tabulate import tabulate
 
 # ------------------- Configure Analog Output (DAQ) -------------------
 
@@ -53,12 +53,8 @@ def control_afg_output(turn_on=True):
 
                 idn = inst.query("*IDN?")
                 if "GW INSTEK" in idn.upper() and "AFG-2005" in idn.upper():
-                    if turn_on:
-                        inst.write("OUTP1 ON")
-                        print("AFG-2005 CH1 output enabled.")
-                    else:
-                        inst.write("OUTP1 OFF")
-                        print("AFG-2005 CH1 output disabled.")
+                    inst.write(f"OUTP1 {'ON' if turn_on else 'OFF'}")
+                    print(f"AFG-2005 CH1 output {'enabled' if turn_on else 'disabled'}.")
                     return
             except Exception:
                 continue
@@ -135,50 +131,44 @@ def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1
                                                   clr_line='Dev1/port1/line0'):
     results = []
 
-    # Set CLR LOW then HIGH to clear the flip-flop
     set_digital_output(clr_line, False)
     time.sleep(0.5)
     set_digital_output(clr_line, True)
     time.sleep(0.5)
 
-    # Initialize Q = 1 by setting J = 1, K = 0 and sending a clock pulse
     print("\nInitializing Q to logic 1 (J=1, K=0, clock pulse)...")
     set_daq_analog_output(ao_j, 5.0)
     set_daq_analog_output(ao_k, 0.0)
     send_daq_clock_pulse(clk_line)
     time.sleep(1)
 
-    # Sweep J from 2.5V to 0V, keeping K = 5V
-    for voltage in [round(v * 0.05, 2) for v in reversed(range(0, 31))]:  # 2.5 to 0.0
+    for voltage in [round(v * 0.05, 2) for v in reversed(range(0, 31))]:
         print(f"\nApplying {voltage} V to J (AO0)...")
         set_daq_analog_output(ao_j, voltage)
-        set_daq_analog_output(ao_k, 5.0)  # Keep K at 5 V
-
-        # Send clock pulse
+        set_daq_analog_output(ao_k, 5.0)
         send_daq_clock_pulse(clk_line)
         time.sleep(1)
 
-        # Read Q voltage from multimeter
         measured = read_voltage_with_validation(port=fluke_port)
 
+        try:
+            logic_q = 'H' if float(measured) > 2.0 else 'L'
+        except:
+            logic_q = '?'
 
-        # Determine logic level of Q
-        logic_q = 'H' if measured and float(measured) > 2.0 else 'L'
+        results.append([voltage, measured, logic_q])
 
-        results.append({
-            'J Voltage (V)': voltage,
-            'Q Voltage (V)': measured,
-            'Q Logic State': logic_q
-        })
-
-    df = pd.DataFrame(results)
+    headers = ["J Voltage (V)", "Q Voltage (V)", "Q Logic State"]
     print("\nSweep Results:")
-    print(df.to_string(index=False))
+    print(tabulate(results, headers=headers, tablefmt="grid"))
 
-    df.to_csv("voltage_descending_sweep_results.csv", index=False)
+    with open("voltage_descending_sweep_results.csv", "w") as f:
+        f.write(",".join(headers) + "\n")
+        for row in results:
+            f.write(",".join(str(x) for x in row) + "\n")
+
     print("\nResults saved to 'voltage_descending_sweep_results.csv'.")
-
-    return df
+    return results
 
 # ------------------- Validate Voltage Reading -------------------
 
@@ -197,26 +187,17 @@ def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
         print(f"Invalid reading '{voltage_str}', retrying ({attempt + 1}/{max_retries})...")
         time.sleep(delay)
     print("Warning: Maximum retries reached. Returning last invalid reading.")
-    return voltage_str  # Último intento, aunque sea inválido
-
+    return voltage_str
 
 # ------------------- Main -------------------
 
 if __name__ == "__main__":
-    # Apagar generador de funciones
     control_afg_output(False)
-
-    # Configurar y apagar CH1 (0 V, 100 mA)
     control_siglent_ch1(voltage=0.0, current=0.1, output_on=False)
     time.sleep(3)
-
-    # Encender CH1 con 5 V y 100 mA
     control_siglent_ch1(voltage=5.0, current=0.1, output_on=True)
-
-    # Set CLK line LOW initially
     set_digital_output('Dev1/port1/line1', False)
 
-    # Ejecutar el barrido de voltaje
     perform_descending_voltage_sweep_and_measure(
         ao_j='Dev1/ao0',
         ao_k='Dev1/ao1',
@@ -225,10 +206,7 @@ if __name__ == "__main__":
         clr_line='Dev1/port1/line0'
     )
 
-    # Reset J, K, and CLR to 0
     set_daq_analog_output('Dev1/ao0', 0.0)
     set_daq_analog_output('Dev1/ao1', 0.0)
     set_digital_output('Dev1/port1/line0', False)
-
-    # Apagar CH1 y poner voltaje a 0
     control_siglent_ch1(voltage=0.0, current=0.1, output_on=False)

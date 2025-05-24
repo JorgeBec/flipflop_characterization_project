@@ -2,7 +2,7 @@ import pyvisa
 import time
 import re
 import nidaqmx
-import pandas as pd
+from tabulate import tabulate
 
 # ------------------- Configure Analog Output (DAQ) -------------------
 
@@ -18,32 +18,20 @@ def set_daq_analog_output(channel, voltage):
 # ------------------- Detect and Configure Siglent Power Supply -------------------
 
 def detect_siglent_power_supply():
-    import re
     rm = pyvisa.ResourceManager()
     resources = rm.list_resources()
-    #print("🔍 VISA Resources found:", resources)
-
     siglent_pattern = re.compile(r"SIGLENT.*SPD3303X-E", re.IGNORECASE)
 
     for resource in resources:
         try:
-            #print(f"🔌 Trying resource: {resource}")
             instrument = rm.open_resource(resource)
             instrument.timeout = 3000
             idn = instrument.query("*IDN?").strip()
-            #print(f"🧾 Response from {resource}: {idn}")
-
             if siglent_pattern.search(idn):
-                #print(f"✅ Detected Siglent SPD3303X-E at {resource}")
                 return instrument
-
-        except Exception as e:
-            #print(f"⚠️ Error probing {resource}: {e}")
+        except Exception:
             pass
-
-    #print("❌ Siglent SPD3303X-E power supply not detected.")
     return None
-
 
 def configure_power_supply_ch1_0v_off(supply):
     try:
@@ -153,7 +141,26 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
         print("Error connecting to multimeter:", e)
         return None
 
-# ------------------- Voltage Sweep Routine -------------------
+# ------------------- Validate Voltage Reading -------------------
+
+def is_valid_voltage(val_str, min_v=0.0, max_v=6.0):
+    try:
+        val = float(val_str)
+        return min_v <= val <= max_v
+    except (ValueError, TypeError):
+        return False
+
+def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
+    for attempt in range(max_retries):
+        voltage_str = read_voltage_with_fluke45(port)
+        if is_valid_voltage(voltage_str):
+            return voltage_str
+        print(f"Invalid reading '{voltage_str}', retrying ({attempt + 1}/{max_retries})...")
+        time.sleep(delay)
+    print("Warning: Maximum retries reached. Returning last invalid reading.")
+    return voltage_str
+
+# ------------------- Voltage Sweep Routine (with tabulate) -------------------
 
 def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_port='ASRL9::INSTR'):
     results = []
@@ -176,41 +183,23 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
         except:
             logic_state = "?"
 
-        results.append({
-            'J Voltage (V)': voltage,
-            'Q Voltage (V)': measured,
-            'Q Logic State': logic_state
-        })
+        results.append([
+            voltage,
+            measured,
+            logic_state
+        ])
 
-    df = pd.DataFrame(results)
+    headers = ["J Voltage (V)", "Q Voltage (V)", "Q Logic State"]
     print("\nSweep Results:")
-    print(df.to_string(index=False))
+    print(tabulate(results, headers=headers, tablefmt="grid"))
 
-    df.to_csv("voltage_ascending_sweep_results.csv", index=False)
+    with open("voltage_ascending_sweep_results.csv", "w") as f:
+        f.write(",".join(headers) + "\n")
+        for row in results:
+            f.write(",".join(str(x) for x in row) + "\n")
+
     print("\nResults saved to 'voltage_ascending_sweep_results.csv'.")
-
-    return df
-
-
-# ------------------- Validate Voltage Reading -------------------
-
-def is_valid_voltage(val_str, min_v=0.0, max_v=6.0):
-    try:
-        val = float(val_str)
-        return min_v <= val <= max_v
-    except (ValueError, TypeError):
-        return False
-
-def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
-    for attempt in range(max_retries):
-        voltage_str = read_voltage_with_fluke45(port)
-        if is_valid_voltage(voltage_str):
-            return voltage_str
-        print(f"Invalid reading '{voltage_str}', retrying ({attempt + 1}/{max_retries})...")
-        time.sleep(delay)
-    print("Warning: Maximum retries reached. Returning last invalid reading.")
-    return voltage_str  # Último intento, aunque sea inválido
-
+    return results
 
 # ------------------- Main -------------------
 
@@ -220,7 +209,6 @@ if __name__ == "__main__":
         configure_power_supply_ch1_0v_off(power_supply)
         time.sleep(3)
         configure_power_supply_ch1_5v_on(power_supply)
-            
     else:
         print("Siglent SPD3303X-E power supply not detected.")
     
@@ -237,7 +225,6 @@ if __name__ == "__main__":
 
     set_daq_analog_output('Dev1/ao0', 0.0)
     set_daq_analog_output('Dev1/ao1', 0.0)
-
     set_digital_output('Dev1/port1/line0', False)
 
     if power_supply:
