@@ -37,7 +37,7 @@ def configure_power_supply_ch1_0v_off(supply):
     try:
         supply.write("CH1:VOLT 0")
         supply.write("OUTP CH1,OFF")
-        print("Power supply CH1 set to 0 V and turned OFF.")
+        #print("Power supply CH1 set to 0 V and turned OFF.")
     except Exception as e:
         print("Error setting power supply CH1 to 0 V and OFF:", e)
 
@@ -46,14 +46,14 @@ def configure_power_supply_ch1_5v_on(supply):
         supply.write("CH1:VOLT 5")
         supply.write("CH1:CURR 0.1")
         supply.write("OUTP CH1,ON")
-        print("Power supply CH1 configured to 5 V and turned ON.")
+        #print("Power supply CH1 configured to 5 V and turned ON.")
     except Exception as e:
         print("Error configuring power supply CH1:", e)
 
 def power_supply_ch1_off(supply):
     try:
         supply.write("OUTP CH1,OFF")
-        print("Power supply CH1 turned OFF.")
+        #print("Power supply CH1 turned OFF.")
     except Exception as e:
         print("Error turning off power supply CH1:", e)
 
@@ -103,7 +103,7 @@ def set_digital_output(line, value):
     with nidaqmx.Task() as task:
         task.do_channels.add_do_chan(line)
         task.write(value)
-        print(f"Digital line {line} set to {'HIGH' if value else 'LOW'}.")
+        #print(f"Digital line {line} set to {'HIGH' if value else 'LOW'}.")
 
 # ------------------- Read Voltage from Fluke 45 Multimeter -------------------
 
@@ -167,7 +167,7 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
     logic_threshold = 2.5
 
     set_digital_output('Dev1/port1/line1', False)
-    print("Digital line Dev1/port1/line1 set to LOW (initial condition).")
+    #print("Digital line Dev1/port1/line1 set to LOW (initial condition).")
 
     for voltage in [round(v * 0.05, 2) for v in range(0, 31)]:
         print(f"\nApplying {voltage} V to J (AO0)...")

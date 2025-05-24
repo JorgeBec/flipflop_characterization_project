@@ -33,7 +33,7 @@ def set_digital_output(line, value):
     with nidaqmx.Task() as task:
         task.do_channels.add_do_chan(line)
         task.write(value)
-        print(f"Digital line {line} set to {'HIGH' if value else 'LOW'}.")
+        #print(f"Digital line {line} set to {'HIGH' if value else 'LOW'}.")
 
 # ------------------- Control AFG Output -------------------
 
@@ -54,7 +54,7 @@ def control_afg_output(turn_on=True):
                 idn = inst.query("*IDN?")
                 if "GW INSTEK" in idn.upper() and "AFG-2005" in idn.upper():
                     inst.write(f"OUTP1 {'ON' if turn_on else 'OFF'}")
-                    print(f"AFG-2005 CH1 output {'enabled' if turn_on else 'disabled'}.")
+                    #print(f"AFG-2005 output {'enabled' if turn_on else 'disabled'}.")
                     return
             except Exception:
                 continue
@@ -80,7 +80,7 @@ def control_siglent_ch1(voltage=0.0, current=0.1, output_on=True):
                     inst.write(f"CH1:CURR {current}")
                     inst.write("CH1:MODE VOLT")
                     inst.write(f"OUTP CH1,{'ON' if output_on else 'OFF'}")
-                    print(f"SIGLENT CH1 set to {voltage} V, {current} A, Output {'ON' if output_on else 'OFF'}.")
+                    #print(f"SIGLENT CH1 set to {voltage} V, {current} A, Output {'ON' if output_on else 'OFF'}.")
                     return
             except Exception:
                 continue
@@ -136,7 +136,7 @@ def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1
     set_digital_output(clr_line, True)
     time.sleep(0.5)
 
-    print("\nInitializing Q to logic 1 (J=1, K=0, clock pulse)...")
+    #print("\nInitializing Q to logic 1 (J=1, K=0, clock pulse)...")
     set_daq_analog_output(ao_j, 5.0)
     set_daq_analog_output(ao_k, 0.0)
     send_daq_clock_pulse(clk_line)
@@ -184,7 +184,7 @@ def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
         voltage_str = read_voltage_with_fluke45(port)
         if is_valid_voltage(voltage_str):
             return voltage_str
-        print(f"Invalid reading '{voltage_str}', retrying ({attempt + 1}/{max_retries})...")
+        #print(f"Invalid reading '{voltage_str}', retrying ({attempt + 1}/{max_retries})...")
         time.sleep(delay)
     print("Warning: Maximum retries reached. Returning last invalid reading.")
     return voltage_str
