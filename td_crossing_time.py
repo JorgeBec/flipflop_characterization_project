@@ -10,7 +10,7 @@ def find_crossing_time(time1, voltages1, time2, voltages2,type_test):
     threshold2 = (np.max(voltages2) / 2)
     print(f"Threshold ch2: {threshold2:.3f} V")
 
-    if type_test == "1": # High to Low
+    if type_test == "HL": # High to Low
         cross1 = None
         for i in range(len(voltages1)):
             if voltages1[i] <= threshold1:
@@ -25,7 +25,7 @@ def find_crossing_time(time1, voltages1, time2, voltages2,type_test):
                 print(cross2)
                 break  # Stop at first crossing
         
-    elif type_test == "2": # Low to High
+    elif type_test == "LH": # Low to High
         cross1 = None
         for i in range(len(voltages1)):
             if voltages1[i] <= threshold1:
