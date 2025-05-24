@@ -10,7 +10,7 @@ function_table_file = 'function_table.csv'
 
 # Crear ventana principal
 root = tk.Tk()
-root.title("Sweep Results Viewer")
+root.title("Test Results Viewer")
 root.geometry("800x600")
 
 # Crear un notebook (pestañas)
@@ -53,7 +53,7 @@ if not any([
     os.path.exists(voltage_descending_sweep_results),
     os.path.exists(function_table_file)
 ]):
-    label = tk.Label(root, text="⚠️ No se encontraron archivos CSV para mostrar.", font=("Arial", 14))
+    label = tk.Label(root, text="No se encontraron archivos CSV para mostrar.", font=("Arial", 14))
     label.pack(pady=20)
 
 # Ejecutar ventana
