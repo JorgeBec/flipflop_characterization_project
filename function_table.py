@@ -40,7 +40,7 @@ def safe_voltage_read_fluke45(max_attempts=3, min_v=0.0, max_v=6.0):
         voltage = read_voltage_fluke45()
         if voltage is not None and min_v <= voltage <= max_v:
             return voltage
-        print(f"Warning: Invalid voltage reading ({voltage}), retrying ({attempt+1}/{max_attempts})...")
+        #print(f"Warning: Invalid voltage reading ({voltage}), retrying ({attempt+1}/{max_attempts})...")
         time.sleep(0.5)
     print("Failed to get a valid voltage after retries.")
     return None
