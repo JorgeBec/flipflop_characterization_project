@@ -78,6 +78,13 @@ btn4.grid(row=0, column=3, padx=5, pady=5)
 btn_delete = tk.Button(frame, text="Delete Data", command=delete_previous_data, bg='tomato')  # Box 5
 btn_delete.grid(row=1, column=3, padx=5, pady=5)
 
+btn5 = tk.Button(frame, text="tdHL", command=lambda: run_script('osc_tpHL.py'), bg='light blue')
+btn5.grid(row=1, column=0, padx=5, pady=5)
+
+btn5 = tk.Button(frame, text="tdLH", command=lambda: run_script('osc_tpLH.py'), bg='light blue')
+btn5.grid(row=1, column=1, padx=5, pady=5)
+
+
 # Text area to display output
 text_area = scrolledtext.ScrolledText(root, width=100, height=25)
 text_area.pack(padx=10, pady=10)

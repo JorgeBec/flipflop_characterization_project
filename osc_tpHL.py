@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 from td_crossing_time import find_crossing_time
 from ff_setup import initialize_daq_outputs_zero
 from cap_ch import capture_channel
-#from td_crossing_time import find_crossing_time
+
+
+print("Running test for propagation delay HL\n")
 
 ## -------------- Oscilloscope setup ----------------- ##
 rm = pyvisa.ResourceManager()
@@ -68,7 +70,7 @@ with nidaqmx.Task() as task:
 
 
         
-time.sleep(0.2)  # Wait for 100 ms    
+time.sleep(0.2)  # Wait to stabilize the output    
 ##negative flank - capture high
 with nidaqmx.Task() as task:
     task.do_channels.add_do_chan("Dev1/port1/line1") #clk
@@ -76,8 +78,6 @@ with nidaqmx.Task() as task:
     time.sleep(0.1)  # Wait for 100 ms
     task.write(False)  # Write voltages to ao0 and ao1 simultaneously
 
-
-### -- DAQ set --###
 
 ## ------------------------- Captrure data ------------------------- ##
 ############ Capture both channels ############
@@ -88,7 +88,7 @@ time2, volts2 = capture_channel(2)
 
 
 ############ Find crossing time ############
-find_crossing_time(time1, volts1, time2, volts2,type_test)
+tpHL = find_crossing_time(time1, volts1, time2, volts2,type_test)
 
 ############ Find crossing time ############
 
@@ -119,7 +119,7 @@ df.to_csv("channel2_capture.csv", index=False)
 plt.figure(figsize=(10, 5))
 plt.plot(time1, volts1, label='CH1', color='blue')
 plt.plot(time2, volts2, label='CH2', color='red')
-plt.title("Waveforms from CH1 and CH2")
+plt.title(f"Propagation delay: {tpHL * 1e9:.2f} ns")
 plt.xlabel("Time (nS)")
 plt.ylabel("Voltage (V)")
 plt.grid(True)
