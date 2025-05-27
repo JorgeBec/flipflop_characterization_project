@@ -2,7 +2,7 @@ import pyvisa
 import nidaqmx
 import numpy as np
 import time
-
+import re
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -17,7 +17,58 @@ print("Running test for propagation delay HL\n")
 rm = pyvisa.ResourceManager()
 devices = rm.list_resources()
 
-osc = rm.open_resource(devices[0])
+osc = rm.open_resource(devices[1])
+
+#-----------------------------------Power supply configuration ---------------------------------------------------------------
+def detect_siglent_power_supply():
+    rm = pyvisa.ResourceManager()
+    resources = rm.list_resources()
+    siglent_pattern = re.compile(r"SIGLENT.*SPD3303X-E", re.IGNORECASE)
+
+    for resource in resources:
+        try:
+            instrument = rm.open_resource(resource)
+            instrument.timeout = 3000
+            idn = instrument.query("*IDN?").strip()
+            if siglent_pattern.search(idn):
+                return instrument
+        except Exception:
+            pass
+    return None
+
+def configure_power_supply_ch1_0v_off(supply):
+    try:
+        supply.write("CH1:VOLT 0")
+        supply.write("OUTP CH1,OFF")
+        #print("Power supply CH1 set to 0 V and turned OFF.")
+    except Exception as e:
+        print("Error setting power supply CH1 to 0 V and OFF:", e)
+
+def configure_power_supply_ch1_5v_on(supply):
+    try:
+        supply.write("CH1:VOLT 5")
+        supply.write("CH1:CURR 0.1")
+        supply.write("OUTP CH1,ON")
+        #print("Power supply CH1 configured to 5 V and turned ON.")
+    except Exception as e:
+        print("Error configuring power supply CH1:", e)
+
+
+power_supply = detect_siglent_power_supply()
+if power_supply:
+    configure_power_supply_ch1_0v_off(power_supply)
+    time.sleep(3)
+    configure_power_supply_ch1_5v_on(power_supply)
+else:
+    print("Siglent SPD3303X-E power supply not detected.")
+
+time.sleep(0.8)
+
+
+
+
+
+
 
 
 ## --------------- DAQ setup ----------------- ##

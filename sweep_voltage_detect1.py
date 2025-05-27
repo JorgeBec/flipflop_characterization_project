@@ -113,7 +113,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement)
     return matches[0] if matches else measurement
 
-def read_voltage_with_fluke45(port='ASRL9::INSTR'):
+def read_voltage_with_fluke45(port='ASRL12::INSTR'):
     try:
         rm = pyvisa.ResourceManager()
         instrument = rm.open_resource(port)
@@ -173,7 +173,65 @@ def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_po
         print(f"\nApplying {voltage} V to J (AO0)...")
         set_daq_analog_output(ao_j, voltage)
         set_daq_analog_output(ao_k, 0.0)
-        time.sleep(1)
+        time.sleep(0.5)
+
+        measured = read_voltage_with_validation(port=fluke_port)
+
+        try:
+            measured_val = float(measured)
+            logic_state = "H" if measured_val >= logic_threshold else "L"
+        except:
+            logic_state = "?"
+
+        results.append([
+            voltage,
+            measured,
+            logic_state
+        ])
+
+    headers = ["J Voltage (V)", "Q Voltage (V)", "Q Logic State"]
+    print("\nSweep Results:")
+    print(tabulate(results, headers=headers, tablefmt="grid"))
+
+    with open("voltage_ascending_sweep_results.csv", "w") as f:
+        f.write(",".join(headers) + "\n")
+        for row in results:
+            f.write(",".join(str(x) for x in row) + "\n")
+
+    print("\nResults saved to 'voltage_ascending_sweep_results.csv'.")
+    return results
+
+# ------------------- Send Clock Pulse using DAQ -------------------
+
+def send_daq_clock_pulse(clk_line='Dev1/port1/line1', high_time=0.01):
+    with nidaqmx.Task() as task:
+        task.do_channels.add_do_chan(clk_line)
+        task.write(False)  # Pulso inicial en bajo
+        time.sleep(0.01)
+        task.write(True)   # Pulso alto
+        time.sleep(high_time)
+        task.write(False)  # Regreso a bajo
+        print(f"Clock pulse sent on {clk_line}.")
+
+# ... (todo el código anterior igual)
+
+# ------------------- Voltage Sweep Routine (with tabulate) -------------------
+
+def perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_port='ASRL9::INSTR'):
+    results = []
+    logic_threshold = 2.5
+
+    set_digital_output('Dev1/port1/line1', False)  # Línea de reloj en bajo inicialmente
+
+    for voltage in [round(v * 0.05, 2) for v in range(0, 31)]:
+        print(f"\nApplying {voltage} V to J (AO0)...")
+        set_daq_analog_output(ao_j, voltage)
+        set_daq_analog_output(ao_k, 0.0)
+        time.sleep(0.1)
+
+        send_daq_clock_pulse('Dev1/port1/line1')  # Pulso de reloj tras aplicar voltaje
+
+        time.sleep(0.3)  # Espera para que se estabilice la salida
 
         measured = read_voltage_with_validation(port=fluke_port)
 
@@ -211,15 +269,13 @@ if __name__ == "__main__":
         configure_power_supply_ch1_5v_on(power_supply)
     else:
         print("Siglent SPD3303X-E power supply not detected.")
-    
-    detect_and_configure_gwinstek_afg()
-    time.sleep(1)
+
     set_digital_output('Dev1/port1/line0', False)
     time.sleep(1)
     set_digital_output('Dev1/port1/line0', True)
 
-    set_daq_analog_output('Dev1/ao0', 0.0)
-    set_daq_analog_output('Dev1/ao1', 1.0)
+    set_daq_analog_output('Dev1/ao0', 0.0)  # J = 0 V
+    set_daq_analog_output('Dev1/ao1', 1.0)  # K = 1 V inicialmente (solo para setup si quieres)
 
     perform_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1', fluke_port='ASRL9::INSTR')
 
@@ -229,3 +285,5 @@ if __name__ == "__main__":
 
     if power_supply:
         power_supply_ch1_off(power_supply)
+
+

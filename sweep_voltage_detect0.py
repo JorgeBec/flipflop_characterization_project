@@ -95,7 +95,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement)
     return matches[0] if matches else measurement
 
-def read_voltage_with_fluke45(port='ASRL9::INSTR'):
+def read_voltage_with_fluke45(port='ASRL12::INSTR'):
     try:
         rm = pyvisa.ResourceManager()
         instrument = rm.open_resource(port)
@@ -103,7 +103,7 @@ def read_voltage_with_fluke45(port='ASRL9::INSTR'):
         instrument.timeout = 5000
 
         instrument.write("VOLT")
-        time.sleep(2)
+        time.sleep(1)
 
         try:
             instrument.query("VAL1?")
@@ -179,7 +179,7 @@ def is_valid_voltage(val_str, min_v=0.0, max_v=6.0):
     except (ValueError, TypeError):
         return False
 
-def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
+def read_voltage_with_validation(port='ASRL12::INSTR', max_retries=5, delay=1):
     for attempt in range(max_retries):
         voltage_str = read_voltage_with_fluke45(port)
         if is_valid_voltage(voltage_str):

@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 
 rm = pyvisa.ResourceManager()
 devices = rm.list_resources()
-osc = rm.open_resource(devices[0])
+
+osc = rm.open_resource(devices[1])
+print(osc.query("*IDN?"))
 
 
 def capture_channel(channel):

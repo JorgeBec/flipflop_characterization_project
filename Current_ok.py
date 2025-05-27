@@ -37,7 +37,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement.strip())
     return matches[0] if matches else measurement
 
-def read_voltage_fluke45(port='ASRL4::INSTR'): 
+def read_voltage_fluke45(port='ASRL12::INSTR'): 
     try:
         rm = pyvisa.ResourceManager()
         multimeter = rm.open_resource(port)
@@ -145,7 +145,7 @@ with nidaqmx.Task() as task_ao, nidaqmx.Task() as task_do, nidaqmx.Task() as do_
  
     task_do.write(Canal_2)
     do_task.write([True, True])
-    time.sleep(20)
+    time.sleep(3)
 
     do_task.write([True, False])
     time.sleep(3)
@@ -161,7 +161,7 @@ with nidaqmx.Task() as task_ao, nidaqmx.Task() as task_do, nidaqmx.Task() as do_
 
     #-----------------------------------------------Voltage4---------------------------------------------------------
     task_do.write(Canal_1)
-    time.sleep(20)
+    time.sleep(3)
 
     Measurement_4 = safe_voltage_read_fluke45()
     if Measurement_4 is not None:
@@ -182,9 +182,9 @@ with nidaqmx.Task() as task_ao, nidaqmx.Task() as task_do, nidaqmx.Task() as do_
         print("I_IL could not be calculated because some measurement failed")
         
         
-        tabla_resultados = [
-    ["ICC", f"{Icc:.6e}" if Measurement_1 is not None and Measurement_2 is not None else "N/A"],
-    ["IIL", f"{I_IL:.6e}" if Measurement_3 is not None and Measurement_4 is not None else "N/A"]
-]
+      #  tabla_resultados = [
+    #["ICC", f"{Icc:.6e}" if Measurement_1 is not None and Measurement_2 is not None else "N/A"],
+  #  ["IIL", f"{I_IL:.6e}" if Measurement_3 is not None and Measurement_4 is not None else "N/A"]
 
-print(tabulate(tabla_resultados, headers=["Current", "Result"], tablefmt="grid"))
+
+#print(tabulate(tabla_resultados, headers=["Current", "Result"], tablefmt="grid"))
