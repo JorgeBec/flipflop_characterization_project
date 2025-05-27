@@ -4,61 +4,61 @@ import re
 
 def remove_duplicate(measurement):
     """
-    Detecta y elimina valores duplicados de medición en la cadena.
-    Por ejemplo: "+22.009E+3+22.009E+3" -> "+22.009E+3"
+    Detects and removes duplicate measurement values in the string.
+    Example: "+22.009E+3+22.009E+3" -> "+22.009E+3"
     """
     measurement = measurement.strip()
     
-    # Usa una expresión regular para buscar valores tipo +22.009E+3
+    # Use a regular expression to match values like +22.009E+3
     pattern = r'[+-]?\d+\.\d+E[+-]?\d+'
     matches = re.findall(pattern, measurement)
 
-    # Si hay al menos un valor, devuelve el primero
+    # If at least one value is found, return the first one
     if matches:
         return matches[0]
 
-    # Si no encuentra ningún patrón, devuelve la cadena original
+    # If no pattern is found, return the original string
     return measurement
 
 try:
     rm = pyvisa.ResourceManager()
-    # Listamos los dispositivos conectados para verificar
+    # List connected devices to verify
     devices = rm.list_resources()
-    print("Dispositivos conectados:", devices)
+    print("Connected devices:", devices)
     
-    # Abrimos el recurso del multímetro (ajusta si tu puerto es diferente)
-    instrument = rm.open_resource('ASRL6::INSTR')
+    # Open the multimeter resource (adjust if your port is different)
+    instrument = rm.open_resource('ASRL5::INSTR')
     
-    # Configuramos parámetros de comunicación:
-    instrument.baud_rate = 9600  # Asegúrate de que coincide con el multímetro
-    instrument.timeout = 5000    # Timeout aumentado a 5000 ms
+    # Configure communication parameters:
+    instrument.baud_rate = 9600  # Make sure this matches your multimeter
+    instrument.timeout = 5000    # Increased timeout to 5000 ms
     
-    # Cambiamos a la función de medición de voltaje
+    # Switch to voltage measurement function
     instrument.write("VOLT")
-    print("Multímetro cambiado a la función de voltaje (Volts).")
+    print("Multimeter set to voltage function (Volts).")
     
-    # Esperamos unos segundos para que el cambio de función se estabilice
+    # Wait a few seconds for the function switch to stabilize
     time.sleep(2)
     
-    # Obtenemos la medición usando VAL1?
+    # Get the measurement using VAL1?
     try:
-        valor_medido = instrument.query("VAL1?")
-        valor_medido = valor_medido.strip()
-        #print("Valor medido (VAL1?):", valor_medido)
+        measured_value = instrument.query("VAL1?")
+        measured_value = measured_value.strip()
+        # print("Measured value (VAL1?):", measured_value)
     except Exception as e:
-        print("Error al obtener el valor medido con VAL1?:", e)
+        print("Error getting measured value with VAL1?:", e)
     
-    # Obtenemos la medición usando MEAS1?
+    # Get the measurement using MEAS1?
     try:
-        valor_medido_meas = instrument.query("MEAS1?")
-        valor_medido_meas = valor_medido_meas.strip()
-        #print("Respuesta cruda (MEAS1?):", valor_medido_meas)
+        measured_value_meas = instrument.query("MEAS1?")
+        measured_value_meas = measured_value_meas.strip()
+        # print("Raw response (MEAS1?):", measured_value_meas)
         
-        # Procesamos la respuesta para eliminar la duplicación
-        valor_corregido = remove_duplicate(valor_medido_meas)
-        print("Valor de Voltaje:", valor_corregido)
+        # Process the response to remove duplication
+        corrected_value = remove_duplicate(measured_value_meas)
+        print("Voltage Value:", corrected_value)
     except Exception as e:
-        print("Error al obtener el valor medido con MEAS1?: ", e)
+        print("Error getting measured value with MEAS1?:", e)
 
 except Exception as e:
-    print("Error al conectar o comunicar con el multímetro: ", e)
+    print("Error connecting or communicating with the multimeter:", e)
