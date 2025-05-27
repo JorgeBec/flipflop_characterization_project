@@ -27,7 +27,7 @@ try:
     print("Connected devices:", devices)
     
     # Open the multimeter resource (adjust if your port is different)
-    instrument = rm.open_resource('ASRL5::INSTR')
+    instrument = rm.open_resource('ASRL10::INSTR')
     
     # Configure communication parameters:
     instrument.baud_rate = 9600  # Make sure this matches your multimeter

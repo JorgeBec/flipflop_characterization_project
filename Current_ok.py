@@ -37,7 +37,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement.strip())
     return matches[0] if matches else measurement
 
-def read_voltage_fluke45(port='ASRL12::INSTR'): 
+def read_voltage_fluke45(port='ASRL13::INSTR'): 
     try:
         rm = pyvisa.ResourceManager()
         multimeter = rm.open_resource(port)
@@ -91,9 +91,9 @@ with nidaqmx.Task() as task_ao, nidaqmx.Task() as task_do, nidaqmx.Task() as do_
     task_ao.ao_channels.add_ao_voltage_chan("Dev2/ao0", min_val=0.0, max_val=5.0)
     task_ao.ao_channels.add_ao_voltage_chan("Dev2/ao1", min_val=0.0, max_val=5.0)
 
-    task_do.do_channels.add_do_chan("Dev2/port0/line0:2", line_grouping=LineGrouping.CHAN_PER_LINE)
-    do_task.do_channels.add_do_chan("Dev2/port1/line0")
-    do_task.do_channels.add_do_chan("Dev2/port1/line1")
+    task_do.do_channels.add_do_chan("Dev2/port0/line0:2", line_grouping=LineGrouping.CHAN_PER_LINE) # A B C
+    do_task.do_channels.add_do_chan("Dev2/port1/line0") #clr
+    do_task.do_channels.add_do_chan("Dev2/port1/line1") #clk
 
     Voltage_1 = detect_siglent_power_supply()
     if Voltage_1:
@@ -114,10 +114,10 @@ with nidaqmx.Task() as task_ao, nidaqmx.Task() as task_do, nidaqmx.Task() as do_
     task_ao.write([5, 0])
     task_do.write(Canal_0)
     do_task.write([True, True])
-    time.sleep(3)
+    time.sleep(2)
 
     do_task.write([True, False])
-    time.sleep(3)
+    time.sleep(2)
 
     Measurement_1 = safe_voltage_read_fluke45()
     print(f"Measurement 1: {Measurement_1} V")
@@ -126,12 +126,12 @@ with nidaqmx.Task() as task_ao, nidaqmx.Task() as task_do, nidaqmx.Task() as do_
  #---------------------------------------------------Voltage2------------------------------------------
 
     task_do.write(Canal_3)
-    time.sleep(3)
+    time.sleep(2)
 
     Measurement_2 = safe_voltage_read_fluke45()
     print(f"Measurement 2: {Measurement_2} V")
 
-    time.sleep(3)
+    time.sleep(2)
 
     resistance = 1  
     if Measurement_1 is not None and Measurement_2 is not None:
@@ -182,9 +182,9 @@ with nidaqmx.Task() as task_ao, nidaqmx.Task() as task_do, nidaqmx.Task() as do_
         print("I_IL could not be calculated because some measurement failed")
         
         
-      #  tabla_resultados = [
-    #["ICC", f"{Icc:.6e}" if Measurement_1 is not None and Measurement_2 is not None else "N/A"],
-  #  ["IIL", f"{I_IL:.6e}" if Measurement_3 is not None and Measurement_4 is not None else "N/A"]
+    tabla_resultados = [
+    ["ICC", f"{Icc:.6e}" if Measurement_1 is not None and Measurement_2 is not None else "N/A"],
+    ["IIL", f"{I_IL:.6e}" if Measurement_3 is not None and Measurement_4 is not None else "N/A"]
+    ]
 
-
-#print(tabulate(tabla_resultados, headers=["Current", "Result"], tablefmt="grid"))
+print(tabulate(tabla_resultados, headers=["Current", "Result [mA]"], tablefmt="grid"))

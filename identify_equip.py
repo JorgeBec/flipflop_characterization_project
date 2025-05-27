@@ -1,11 +1,11 @@
-
-
 import pyvisa
+import time
 
 def listar_dispositivos_conectados():
     rm = pyvisa.ResourceManager()
     dispositivos = rm.list_resources()
     
+    time.sleep(1)  # Esperar un segundo para asegurar que la lista esté actualizada
     print("📋 Lista de dispositivos detectados:\n")
 
     if not dispositivos:

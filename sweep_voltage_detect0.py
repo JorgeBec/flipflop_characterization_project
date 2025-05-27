@@ -95,7 +95,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement)
     return matches[0] if matches else measurement
 
-def read_voltage_with_fluke45(port='ASRL12::INSTR'):
+def read_voltage_with_fluke45(port='ASRL10::INSTR'):
     try:
         rm = pyvisa.ResourceManager()
         instrument = rm.open_resource(port)
@@ -125,10 +125,10 @@ def read_voltage_with_fluke45(port='ASRL12::INSTR'):
 
 # ------------------- Voltage Sweep Routine (Descending) -------------------
 
-def perform_descending_voltage_sweep_and_measure(ao_j='Dev1/ao0', ao_k='Dev1/ao1',
-                                                  fluke_port='ASRL9::INSTR',
-                                                  clk_line='Dev1/port1/line1',
-                                                  clr_line='Dev1/port1/line0'):
+def perform_descending_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1',
+                                                  fluke_port='ASRL10::INSTR',
+                                                  clk_line='Dev2/port1/line1',
+                                                  clr_line='Dev2/port1/line0'):
     results = []
 
     set_digital_output(clr_line, False)
@@ -179,7 +179,7 @@ def is_valid_voltage(val_str, min_v=0.0, max_v=6.0):
     except (ValueError, TypeError):
         return False
 
-def read_voltage_with_validation(port='ASRL12::INSTR', max_retries=5, delay=1):
+def read_voltage_with_validation(port='ASRL10::INSTR', max_retries=5, delay=1):
     for attempt in range(max_retries):
         voltage_str = read_voltage_with_fluke45(port)
         if is_valid_voltage(voltage_str):
@@ -196,17 +196,17 @@ if __name__ == "__main__":
     control_siglent_ch1(voltage=0.0, current=0.1, output_on=False)
     time.sleep(3)
     control_siglent_ch1(voltage=5.0, current=0.1, output_on=True)
-    set_digital_output('Dev1/port1/line1', False)
+    set_digital_output('Dev2/port1/line1', False)
 
     perform_descending_voltage_sweep_and_measure(
-        ao_j='Dev1/ao0',
-        ao_k='Dev1/ao1',
-        fluke_port='ASRL9::INSTR',
-        clk_line='Dev1/port1/line1',
-        clr_line='Dev1/port1/line0'
+        ao_j='Dev2/ao0',
+        ao_k='Dev2/ao1',
+        fluke_port='ASRL10::INSTR',
+        clk_line='Dev2/port1/line1',
+        clr_line='Dev2/port1/line0'
     )
 
-    set_daq_analog_output('Dev1/ao0', 0.0)
-    set_daq_analog_output('Dev1/ao1', 0.0)
-    set_digital_output('Dev1/port1/line0', False)
+    set_daq_analog_output('Dev2/ao0', 0.0)
+    set_daq_analog_output('Dev2/ao1', 0.0)
+    set_digital_output('Dev2/port1/line0', False)
     control_siglent_ch1(voltage=0.0, current=0.1, output_on=False)

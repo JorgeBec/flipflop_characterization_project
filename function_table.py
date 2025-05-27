@@ -11,7 +11,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement.strip())
     return matches[0] if matches else measurement
 
-def read_voltage_fluke45(port='ASRL9::INSTR'):
+def read_voltage_fluke45(port='ASRL10::INSTR'):
     try:
         rm = pyvisa.ResourceManager()
         multimeter = rm.open_resource(port)
@@ -61,7 +61,7 @@ def set_daq_digital_output(channel, state):
         task.do_channels.add_do_chan(channel)
         task.write(bool(state))
 
-def pulse_clk(channel='Dev1/port1/line1', duration=0.05):
+def pulse_clk(channel='Dev2/port1/line1', duration=0.05):
     set_daq_digital_output(channel, True)
     time.sleep(duration)
     set_daq_digital_output(channel, False)
@@ -149,14 +149,14 @@ def generate_function_table():
     results = []
 
     for clr, j, k in tests:
-        set_daq_digital_output("Dev1/port1/line0", clr)
+        set_daq_digital_output("Dev2/port1/line0", clr)
 
         if j == 'X':
-            set_daq_analog_output("Dev1/ao0", 0.0)
-            set_daq_analog_output("Dev1/ao1", 0.0)
+            set_daq_analog_output("Dev2/ao0", 0.0)
+            set_daq_analog_output("Dev2/ao1", 0.0)
         else:
-            set_daq_analog_output("Dev1/ao0", j)
-            set_daq_analog_output("Dev1/ao1", k)
+            set_daq_analog_output("Dev2/ao0", j)
+            set_daq_analog_output("Dev2/ao1", k)
 
         time.sleep(0.2)
         pulse_clk()

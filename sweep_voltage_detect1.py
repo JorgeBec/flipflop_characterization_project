@@ -113,7 +113,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement)
     return matches[0] if matches else measurement
 
-def read_voltage_with_fluke45(port='ASRL12::INSTR'):
+def read_voltage_with_fluke45(port='ASRL10::INSTR'):
     try:
         rm = pyvisa.ResourceManager()
         instrument = rm.open_resource(port)
@@ -150,7 +150,7 @@ def is_valid_voltage(val_str, min_v=0.0, max_v=6.0):
     except (ValueError, TypeError):
         return False
 
-def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
+def read_voltage_with_validation(port='ASRL10::INSTR', max_retries=5, delay=1):
     for attempt in range(max_retries):
         voltage_str = read_voltage_with_fluke45(port)
         if is_valid_voltage(voltage_str):
@@ -162,7 +162,7 @@ def read_voltage_with_validation(port='ASRL9::INSTR', max_retries=5, delay=1):
 
 # ------------------- Voltage Sweep Routine (with tabulate) -------------------
 
-def perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL9::INSTR'):
+def perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL10::INSTR'):
     results = []
     logic_threshold = 2.5
 
@@ -217,13 +217,13 @@ def send_daq_clock_pulse(clk_line='Dev2/port1/line1', high_time=0.01):
 
 # ------------------- Voltage Sweep Routine (with tabulate) -------------------
 
-def perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL9::INSTR'):
+def perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL10::INSTR'):
     results = []
     logic_threshold = 2.5
 
     set_digital_output('Dev2/port1/line1', False)  # Línea de reloj en bajo inicialmente
 
-    for voltage in [round(v * 0.05, 2) for v in range(0, 31)]:
+    for voltage in [round(v * 0.05, 2) for v in range(0, 31)]:        
         print(f"\nApplying {voltage} V to J (AO0)...")
         set_daq_analog_output(ao_j, voltage)
         set_daq_analog_output(ao_k, 0.0)
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     set_daq_analog_output('Dev2/ao0', 0.0)  # J = 0 V
     set_daq_analog_output('Dev2/ao1', 1.0)  # K = 1 V inicialmente (solo para setup si quieres)
 
-    perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL9::INSTR')
+    perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL10::INSTR')
 
     set_daq_analog_output('Dev2/ao0', 0.0)
     set_daq_analog_output('Dev2/ao1', 0.0)
