@@ -13,11 +13,47 @@ from cap_ch import capture_channel
 
 print("Running test for propagation delay LH\n")
 
-## -------------- Oscilloscope setup ----------------- ##
-rm = pyvisa.ResourceManager()
-devices = rm.list_resources()
+## -------------------------------- Oscilloscope setup ------------------------------------------------- ##
 
-osc = rm.open_resource(devices[1])
+
+
+
+rm = pyvisa.ResourceManager()
+
+for device in rm.list_resources():
+    try:
+        inst = rm.open_resource(device)
+        print(f"{device} -> {inst.query('*IDN?').strip()}")
+    except Exception as e:
+        print(f"{device} -> Error: {e}")
+
+def detect_tektronix_oscilloscope():
+    rm = pyvisa.ResourceManager()
+    resources = rm.list_resources()
+    tektronix_pattern = re.compile(r"TEKTRONIX,TDS", re.IGNORECASE)
+
+    
+
+    for resource in resources:
+        try:
+            instrument = rm.open_resource(resource)
+            instrument.timeout = 3000
+            idn = instrument.query("*IDN?").strip()
+            print(f"Checking: {idn}")  # Opcional
+            if tektronix_pattern.search(idn):
+                return instrument
+        except Exception as e:
+            print(f"Error with {resource}: {e}")
+            continue
+    return None
+
+
+osc = detect_tektronix_oscilloscope()
+if osc:
+    print("Osciloscopio detectado:", osc.query("*IDN?"))
+else:
+    print("No se detectó el osciloscopio Tektronix.")
+
 
 
 #-----------------------------------Power supply configuration ---------------------------------------------------------------
@@ -70,7 +106,7 @@ time.sleep(0.8)
 
 
 ## --------------- DAQ setup ----------------- ##
-initialize_daq_outputs_zero("Dev1")
+initialize_daq_outputs_zero("Dev2")
 
 ### --------------- User inputs ------------- ###
 
@@ -98,17 +134,17 @@ osc.write("TRIGger:MAIn:EDGE:SOUrce CH1")
 
 
 ### --------------------- DAQ set --------------------###
-initialize_daq_outputs_zero("Dev1")
+initialize_daq_outputs_zero("Dev2")
 with nidaqmx.Task() as task:    
-    task.ao_channels.add_ao_voltage_chan("Dev1/ao0", min_val=0, max_val=5) #J
-    task.ao_channels.add_ao_voltage_chan("Dev1/ao1", min_val=0, max_val=5) #K
+    task.ao_channels.add_ao_voltage_chan("Dev2/ao0", min_val=0, max_val=5) #J
+    task.ao_channels.add_ao_voltage_chan("Dev2/ao1", min_val=0, max_val=5) #K
     task.write([5, 0])  # 
 
 
 time.sleep(0.2)  # Wait to stabilize the output    
 ##negative flank - capture high
 with nidaqmx.Task() as task:
-    task.do_channels.add_do_chan("Dev1/port1/line1") #clk
+    task.do_channels.add_do_chan("Dev2/port1/line1") #clk
     task.write(True)  # Write voltages to ao0 and ao1 simultaneously
     time.sleep(0.1)  # Wait for 100 ms
     task.write(False)  # Write voltages to ao0 and ao1 simultaneously
@@ -147,7 +183,7 @@ df.to_csv("channel2_capture.csv", index=False)
 
 
 
-#initialize_daq_outputs_zero("Dev1")
+#initialize_daq_outputs_zero("Dev2")
 ### -- oscilloscope plot -- ###
 
 # Plot
