@@ -27,7 +27,7 @@ def detect_tektronix_oscilloscope():
             instrument = rm.open_resource(resource)
             instrument.timeout = 3000
             idn = instrument.query("*IDN?").strip()
-            print(f"Checking: {idn}")  # Opcional
+            #print(f"Checking: {idn}")  # Opcional
             if tektronix_pattern.search(idn):
                 return instrument
         except Exception as e:
@@ -36,10 +36,10 @@ def detect_tektronix_oscilloscope():
     return None
 
 osc = detect_tektronix_oscilloscope()
-if osc:
-    print("Osciloscopio detectado:", osc.query("*IDN?"))
-else:
-    print("No se detectó el osciloscopio Tektronix.")
+# if osc:
+#     print("Osciloscopio detectado:", osc.query("*IDN?"))
+# else:
+#     print("No se detectó el osciloscopio Tektronix.")
 
 
 
@@ -87,12 +87,6 @@ else:
     print("Siglent SPD3303X-E power supply not detected.")
 
 time.sleep(0.8)
-
-
-
-
-
-
 
 
 ## --------------- DAQ setup ----------------- ##

@@ -15,31 +15,19 @@ print("Running test for propagation delay LH\n")
 
 ## -------------------------------- Oscilloscope setup ------------------------------------------------- ##
 
-
-
-
 rm = pyvisa.ResourceManager()
-
-for device in rm.list_resources():
-    try:
-        inst = rm.open_resource(device)
-        print(f"{device} -> {inst.query('*IDN?').strip()}")
-    except Exception as e:
-        print(f"{device} -> Error: {e}")
 
 def detect_tektronix_oscilloscope():
     rm = pyvisa.ResourceManager()
     resources = rm.list_resources()
     tektronix_pattern = re.compile(r"TEKTRONIX,TDS", re.IGNORECASE)
 
-    
-
     for resource in resources:
         try:
             instrument = rm.open_resource(resource)
             instrument.timeout = 3000
             idn = instrument.query("*IDN?").strip()
-            print(f"Checking: {idn}")  # Opcional
+            #print(f"Checking: {idn}")  # Opcional
             if tektronix_pattern.search(idn):
                 return instrument
         except Exception as e:
@@ -47,12 +35,12 @@ def detect_tektronix_oscilloscope():
             continue
     return None
 
-
 osc = detect_tektronix_oscilloscope()
-if osc:
-    print("Osciloscopio detectado:", osc.query("*IDN?"))
-else:
-    print("No se detectó el osciloscopio Tektronix.")
+# if osc:
+#     print("Osciloscopio detectado:", osc.query("*IDN?"))
+# else:
+#     print("No se detectó el osciloscopio Tektronix.")
+
 
 
 
