@@ -84,6 +84,9 @@ btn5.grid(row=1, column=0, padx=5, pady=5)
 btn5 = tk.Button(frame, text="tdLH", command=lambda: run_script('osc_tpLH.py'), bg='light blue')
 btn5.grid(row=1, column=1, padx=5, pady=5)
 
+# NEW BUTTON - Current_ok
+btn6 = tk.Button(frame, text="Current OK", command=lambda: run_script('Current_ok.py'), bg='light yellow')
+btn6.grid(row=1, column=2, padx=5, pady=5)
 
 # Text area to display output
 text_area = scrolledtext.ScrolledText(root, width=100, height=25)
