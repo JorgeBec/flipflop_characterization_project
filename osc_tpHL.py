@@ -64,6 +64,10 @@ def configure_power_supply_ch1_0v_off(supply):
     try:
         supply.write("CH1:VOLT 0")
         supply.write("OUTP CH1,OFF")
+
+        supply.write("CH2:VOLT 0")
+        supply.write("OUTP CH2,OFF")
+
         #print("Power supply CH1 set to 0 V and turned OFF.")
     except Exception as e:
         print("Error setting power supply CH1 to 0 V and OFF:", e)
@@ -72,10 +76,16 @@ def configure_power_supply_ch1_5v_on(supply):
     try:
         supply.write("CH1:VOLT 5")
         supply.write("CH1:CURR 0.1")
+
+        supply.write("CH2:VOLT 5")
+        supply.write("CH2:CURR 0.1")
+
         supply.write("OUTP CH1,ON")
+        supply.write("OUTP CH2,ON")
         #print("Power supply CH1 configured to 5 V and turned ON.")
     except Exception as e:
         print("Error configuring power supply CH1:", e)
+
 
 
 power_supply = detect_siglent_power_supply()

@@ -57,6 +57,29 @@ def power_supply_ch1_off(supply):
     except Exception as e:
         print("Error turning off power supply CH1:", e)
 
+def configure_power_supply_ch2_0v_off(supply):
+    try:
+        supply.write("CH2:VOLT 0")
+        supply.write("OUTP CH2,OFF")
+        #print("Power supply CH2 set to 0 V and turned OFF.")
+    except Exception as e:
+        print("Error setting power supply CH2 to 0 V and OFF:", e)
+
+def configure_power_supply_ch2_5v_on (supply):
+    try:
+        supply.write("CH2:VOLT 5")
+        supply.write("CH2:CURR 0.1")
+        supply.write("OUTP CH2,ON")
+        #print("Power supply CH2 configured to 5 V and turned ON.")
+    except Exception as e:
+        print("Error configuring power supply CH2:", e)
+def power_supply_ch2_off(supply):
+    try:
+        supply.write("OUTP CH2,OFF")
+        #print("Power supply CH2 turned OFF.")
+    except Exception as e:
+        print("Error turning off power supply CH2:", e)
+
 # ------------------- Configure GW Instek AFG-2005 -------------------
 
 def detect_and_configure_gwinstek_afg():
@@ -167,6 +190,7 @@ def perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_po
     logic_threshold = 2.5
 
     set_digital_output('Dev2/port1/line1', False)
+    set
     #print("Digital line Dev2/port1/line1 set to LOW (initial condition).")
 
     for voltage in [round(v * 0.05, 2) for v in range(0, 31)]:
@@ -265,8 +289,10 @@ if __name__ == "__main__":
     power_supply = detect_siglent_power_supply()
     if power_supply:
         configure_power_supply_ch1_0v_off(power_supply)
+        configure_power_supply_ch2_0v_off(power_supply)
         time.sleep(3)
         configure_power_supply_ch1_5v_on(power_supply)
+        configure_power_supply_ch2_5v_on(power_supply)
     else:
         print("Siglent SPD3303X-E power supply not detected.")
 
@@ -285,5 +311,6 @@ if __name__ == "__main__":
 
     if power_supply:
         power_supply_ch1_off(power_supply)
+        power_supply_ch2_off(power_supply)
 
 

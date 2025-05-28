@@ -122,12 +122,17 @@ def generate_function_table():
     psu = detect_siglent_power_supply()
     if psu:
         psu.write("CH1:VOLT 0")
+        psu.write("CH2:VOLT 0")
         psu.write("OUTP CH1,OFF")
+        psu.write("OUTP CH2,OFF")
         #print("CH1 turned off and set to 0 V.")
         time.sleep(3)
         psu.write("CH1:VOLT 5")
+        psu.write("CH2:VOLT 5")
         psu.write("CH1:CURR 0.1")
+        psu.write("CH2:CURR 0.1")
         psu.write("OUTP CH1,ON")
+        psu.write("OUTP CH2,ON")
         #print("CH1 turned on at 5 V.")
     else:
         print("SIGLENT power supply not detected.")
