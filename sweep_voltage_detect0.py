@@ -201,7 +201,7 @@ if __name__ == "__main__":
     perform_descending_voltage_sweep_and_measure(
         ao_j='Dev2/ao0',
         ao_k='Dev2/ao1',
-        fluke_port='ASRL10::INSTR',
+        fluke_port='ASRL9::INSTR',
         clk_line='Dev2/port1/line1',
         clr_line='Dev2/port1/line0'
     )

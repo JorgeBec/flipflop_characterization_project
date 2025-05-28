@@ -303,7 +303,7 @@ if __name__ == "__main__":
     set_daq_analog_output('Dev2/ao0', 0.0)  # J = 0 V
     set_daq_analog_output('Dev2/ao1', 1.0)  # K = 1 V inicialmente (solo para setup si quieres)
 
-    perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL10::INSTR')
+    perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL9::INSTR')
 
     set_daq_analog_output('Dev2/ao0', 0.0)
     set_daq_analog_output('Dev2/ao1', 0.0)

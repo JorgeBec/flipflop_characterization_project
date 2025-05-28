@@ -11,7 +11,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement.strip())
     return matches[0] if matches else measurement
 
-def read_voltage_fluke45(port='ASRL10::INSTR'):
+def read_voltage_fluke45(port='ASRL9::INSTR'):
     try:
         rm = pyvisa.ResourceManager()
         multimeter = rm.open_resource(port)
