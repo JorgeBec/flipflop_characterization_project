@@ -73,6 +73,7 @@ def configure_power_supply_ch2_5v_on (supply):
         #print("Power supply CH2 configured to 5 V and turned ON.")
     except Exception as e:
         print("Error configuring power supply CH2:", e)
+        
 def power_supply_ch2_off(supply):
     try:
         supply.write("OUTP CH2,OFF")
