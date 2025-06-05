@@ -187,4 +187,4 @@ with nidaqmx.Task() as task_ao, nidaqmx.Task() as task_do, nidaqmx.Task() as do_
     ["IIL", f"{I_IL:.6e}" if Measurement_3 is not None and Measurement_4 is not None else "N/A"]
     ]
 
-print(tabulate(tabla_resultados, headers=["Current", "Result [mA]"], tablefmt="grid"))
+print(tabulate(tabla_resultados, headers=["Current", "Result [A]"], tablefmt="grid"))

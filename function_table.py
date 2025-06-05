@@ -11,7 +11,7 @@ def remove_duplicate(measurement):
     matches = re.findall(pattern, measurement.strip())
     return matches[0] if matches else measurement
 
-def read_voltage_fluke45(port='ASRL10::INSTR'):
+def read_voltage_fluke45(port='ASRL9::INSTR'):
     try:
         rm = pyvisa.ResourceManager()
         multimeter = rm.open_resource(port)
@@ -81,13 +81,46 @@ def detect_siglent_power_supply():
             print(f"Error with {resource}: {e}")
             continue
     return None
+def configure_power_supply_ch1_0v_off(supply):
+    try:
+        supply.write("CH1:VOLT 0")
+        supply.write("OUTP CH1,OFF")
+        #print("Power supply CH1 set to 0 V and turned OFF.")
+    except Exception as e:
+        print("Error setting power supply CH1 to 0 V and OFF:", e)
 
+def configure_power_supply_ch1_5v_on(supply):
+    try:
+        supply.write("CH1:VOLT 5")
+        supply.write("CH1:CURR 0.1")
+        supply.write("OUTP CH1,ON")
+        #print("Power supply CH1 configured to 5 V and turned ON.")
+    except Exception as e:
+        print("Error configuring power supply CH1:", e)
+        
 def power_supply_ch1_off(supply):
     try:
         supply.write("OUTP CH1,OFF")
         #print("Power supply CH1 turned OFF.")
     except Exception as e:
         print("Error turning off power supply CH1:", e)
+
+def configure_power_supply_ch2_0v_off(supply):
+    try:
+        supply.write("CH2:VOLT 0")
+        supply.write("OUTP CH2,OFF")
+        #print("Power supply CH2 set to 0 V and turned OFF.")
+    except Exception as e:
+        print("Error setting power supply CH2 to 0 V and OFF:", e)
+
+def configure_power_supply_ch2_5v_on (supply):
+    try:
+        supply.write("CH2:VOLT 5")
+        supply.write("CH2:CURR 0.1")
+        supply.write("OUTP CH2,ON")
+        #print("Power supply CH2 configured to 5 V and turned ON.")
+    except Exception as e:
+        print("Error configuring power supply CH2:", e)
 
 # ------------------- Signal Generator -------------------
 def detect_afg_2005():
@@ -184,6 +217,15 @@ def generate_function_table():
 
 # ------------------- MAIN -------------------
 if __name__ == "__main__":
+    power_supply = detect_siglent_power_supply()
+    if power_supply:
+        configure_power_supply_ch1_0v_off(power_supply)
+        configure_power_supply_ch2_0v_off(power_supply)
+        time.sleep(3)
+        configure_power_supply_ch1_5v_on(power_supply)
+        configure_power_supply_ch2_5v_on(power_supply)
+    else:
+        print("Siglent SPD3303X-E power supply not detected.")
     psu = None
     try:
         generate_function_table()

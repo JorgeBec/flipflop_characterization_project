@@ -87,6 +87,55 @@ def control_siglent_ch1(voltage=0.0, current=0.1, output_on=True):
     except Exception as e:
         print("Error controlling SPD3303X-E:", e)
 
+
+# ------------------- Power Supply -------------------
+def detect_siglent_power_supply():
+    rm = pyvisa.ResourceManager()
+    for resource in rm.list_resources():
+        try:
+            instrument = rm.open_resource(resource)
+            idn = instrument.query("*IDN?").strip()
+            #print(f"Detected: {resource} → {idn}")
+            if "SIGLENT" in idn.upper() and "SPD3303X-E" in idn.upper():
+                return instrument
+        except Exception as e:
+            print(f"Error with {resource}: {e}")
+            continue
+    return None
+def configure_power_supply_ch1_0v_off(supply):
+    try:
+        supply.write("CH1:VOLT 0")
+        supply.write("OUTP CH1,OFF")
+        #print("Power supply CH1 set to 0 V and turned OFF.")
+    except Exception as e:
+        print("Error setting power supply CH1 to 0 V and OFF:", e)
+
+def configure_power_supply_ch1_5v_on(supply):
+    try:
+        supply.write("CH1:VOLT 5")
+        supply.write("CH1:CURR 0.1")
+        supply.write("OUTP CH1,ON")
+        #print("Power supply CH1 configured to 5 V and turned ON.")
+    except Exception as e:
+        print("Error configuring power supply CH1:", e)
+        
+def configure_power_supply_ch2_0v_off(supply):
+    try:
+        supply.write("CH2:VOLT 0")
+        supply.write("OUTP CH2,OFF")
+        #print("Power supply CH2 set to 0 V and turned OFF.")
+    except Exception as e:
+        print("Error setting power supply CH2 to 0 V and OFF:", e)
+
+def configure_power_supply_ch2_5v_on (supply):
+    try:
+        supply.write("CH2:VOLT 5")
+        supply.write("CH2:CURR 0.1")
+        supply.write("OUTP CH2,ON")
+        #print("Power supply CH2 configured to 5 V and turned ON.")
+    except Exception as e:
+        print("Error configuring power supply CH2:", e)
+
 # ------------------- Read Voltage from Fluke 45 Multimeter -------------------
 
 def remove_duplicate(measurement):
@@ -192,6 +241,17 @@ def read_voltage_with_validation(port='ASRL10::INSTR', max_retries=5, delay=1):
 # ------------------- Main -------------------
 
 if __name__ == "__main__":
+
+    power_supply = detect_siglent_power_supply()
+    if power_supply:
+        configure_power_supply_ch1_0v_off(power_supply)
+        configure_power_supply_ch2_0v_off(power_supply)
+        time.sleep(3)
+        configure_power_supply_ch1_5v_on(power_supply)
+        configure_power_supply_ch2_5v_on(power_supply)
+    else:
+        print("Siglent SPD3303X-E power supply not detected.")
+
     control_afg_output(False)
     control_siglent_ch1(voltage=0.0, current=0.1, output_on=False)
     time.sleep(3)
@@ -201,7 +261,7 @@ if __name__ == "__main__":
     perform_descending_voltage_sweep_and_measure(
         ao_j='Dev2/ao0',
         ao_k='Dev2/ao1',
-        fluke_port='ASRL10::INSTR',
+        fluke_port='ASRL9::INSTR',
         clk_line='Dev2/port1/line1',
         clr_line='Dev2/port1/line0'
     )

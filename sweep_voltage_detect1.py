@@ -73,6 +73,7 @@ def configure_power_supply_ch2_5v_on (supply):
         #print("Power supply CH2 configured to 5 V and turned ON.")
     except Exception as e:
         print("Error configuring power supply CH2:", e)
+        
 def power_supply_ch2_off(supply):
     try:
         supply.write("OUTP CH2,OFF")
@@ -303,7 +304,7 @@ if __name__ == "__main__":
     set_daq_analog_output('Dev2/ao0', 0.0)  # J = 0 V
     set_daq_analog_output('Dev2/ao1', 1.0)  # K = 1 V inicialmente (solo para setup si quieres)
 
-    perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL10::INSTR')
+    perform_voltage_sweep_and_measure(ao_j='Dev2/ao0', ao_k='Dev2/ao1', fluke_port='ASRL9::INSTR')
 
     set_daq_analog_output('Dev2/ao0', 0.0)
     set_daq_analog_output('Dev2/ao1', 0.0)
