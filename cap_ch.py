@@ -8,7 +8,7 @@ rm = pyvisa.ResourceManager()
 devices = rm.list_resources()
 
 
-## -------------------------------- Oscilloscope setup ------------------------------------------------- ##
+## -------------------------------- Oscilloscope comunication ------------------------------------------------- ##
 def detect_tektronix_oscilloscope():
     rm = pyvisa.ResourceManager()
     resources = rm.list_resources()
@@ -34,7 +34,7 @@ if osc:
 else:
     print("No se detectó el osciloscopio Tektronix.")
 
-## -----------------------------------Power supply configuration ---------------------------------------------------------------
+## -------------------------------- Oscilloscope setup ------------------------------------------------- ##
 def capture_channel(channel):
     # Set up for selected channel
     osc.write(f"DATa:SOU CH{channel}")

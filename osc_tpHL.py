@@ -36,12 +36,6 @@ def detect_tektronix_oscilloscope():
     return None
 
 osc = detect_tektronix_oscilloscope()
-# if osc:
-#     print("Osciloscopio detectado:", osc.query("*IDN?"))
-# else:
-#     print("No se detectó el osciloscopio Tektronix.")
-
-
 
 #-----------------------------------Power supply configuration ---------------------------------------------------------------
 def detect_siglent_power_supply():
@@ -86,8 +80,6 @@ def configure_power_supply_ch1_5v_on(supply):
     except Exception as e:
         print("Error configuring power supply CH1:", e)
 
-
-
 power_supply = detect_siglent_power_supply()
 if power_supply:
     configure_power_supply_ch1_0v_off(power_supply)
@@ -95,21 +87,15 @@ if power_supply:
     configure_power_supply_ch1_5v_on(power_supply)
 else:
     print("Siglent SPD3303X-E power supply not detected.")
-
 time.sleep(0.8)
 
-
-## --------------- DAQ setup ----------------- ##
+## ----------------------------------------- DAQ setup ---------------------------------------- ##
 initialize_daq_outputs_zero("Dev2")
 
-### --------------- User inputs ------------- ###
-
-#vcc_user = float(input("Vcc = "))
-#freq_user = float(input("f = "))
+### --------------------------------------- User inputs --------------------------------------- ###
 type_test = "HL"
 
-
-### -- display set -- ###
+### ----------------------------------------- display set --------------------------------------- ###
 osc.write("horizontal:main:scale 10E-9")
 osc.write("HORizontal:POSition 0")
 osc.write("HORizontal:POSition 20E-9")
